@@ -4,8 +4,9 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 	// signal generator instructions
 	o_mode, o_set_mode,
 	// pixel generator instructions
-	o_pixel_x, o_pixel_y, o_color, o_set_pixel
-	);
+	o_pixel_x, o_pixel_y, o_color, o_set_pixel,
+	o_busy);
+
 	input wire i_clk;
 	input wire i_we;
 	input wire i_en;
@@ -26,7 +27,7 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 	output reg o_set_pixel;
 	initial o_set_pixel = 1'b0;
 
-	wire [31:0] instruction_data;
+	wire [31:0] dec_instruction_data;
 	reg [7:0] instruction;
 	/* verilator lint_off UNUSED */
 	// we disable linter as we do not have all the instructions fleshed out just yet
@@ -37,6 +38,9 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 
 	reg reset;
 	wire o_ready;
+
+	output reg o_busy;
+	initial o_busy = 0;
 
 	localparam [7:0] NOOP = 8'h0,
 		SET_MODE = 8'h1,
@@ -61,10 +65,12 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 		case (state)
 		WAITING_INSTRUCTION: begin
 			instr_loaded <= 1'b0;
+			o_busy <= 1'b0;
 		end
 		LOADING_INSTRUCTION: begin
-			instruction <= instruction_data[7:0];
-			instruction_args <= instruction_data[31:8];
+			o_busy <= 1'b1;
+			instruction <= dec_instruction_data[7:0];
+			instruction_args <= dec_instruction_data[31:8];
 			instr_loaded <= 1'b1;
 			state <= state + 1;
 		end
@@ -118,6 +124,6 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 
 	instruction_buffer buffer(
 		.i_clk(i_clk), .i_reset(reset), .i_we(i_we), .i_en(i_en), .i_data(i_data), 
-		.o_ack(o_ack), .o_instruction(instruction_data), .o_ready(o_ready));
+		.o_ack(o_ack), .o_instruction(dec_instruction_data), .o_ready(o_ready));
 
 endmodule

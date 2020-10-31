@@ -18,8 +18,8 @@ void	tick(int tickcount, Vinstruction_decoder *tb, VerilatedVcdC* tfp) {
 		tfp->dump(tickcount * 10 + 5);
 		tfp->flush();
 	}
-	printf("i_we: %d, i_en: %d, o_ack: %d, o_set_mode: %d, o_set_pixel: %x\n", 
-		tb->i_we, tb->i_en, tb->o_ack, tb->o_set_mode, tb->o_set_pixel);
+	printf("i_we: %d, i_en: %d, o_ack: %d, o_set_mode: %d, o_set_pixel: %x, o_busy: %d\n", 
+		tb->i_we, tb->i_en, tb->o_ack, tb->o_set_mode, tb->o_set_pixel, tb->o_busy);
 }
 
 void set_display_mode(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVcdC* tfp);
@@ -57,8 +57,11 @@ int main(int argc, char **argv) {
 
 	set_display_mode(tickcount, tb, tfp);
 
+	while (tb->o_busy) tick(++tickcount, tb, tfp);
+
 	set_pixel_color(tickcount, tb, tfp);
 
+	while (tb->o_busy) tick(++tickcount, tb, tfp);
 
 }
 
@@ -85,21 +88,9 @@ void set_display_mode(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVc
 	tick(++tickcount, tb, tfp);
 
 	tb->i_we = 1;
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	// it takes 5 clocks for the result
+	while (!tb->o_set_mode) tick(++tickcount, tb, tfp);
 	printf("Set Mode: %d, Mode: %d\n", tb->o_set_mode, tb->o_mode);
-	tick(++tickcount, tb, tfp);
-	printf("Set Mode: %d, Mode: %d\n", tb->o_set_mode, tb->o_mode);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-
-	// instruction done and all quiet
-	tick(++tickcount, tb, tfp);
+	while (tb->o_set_mode) tick(++tickcount, tb, tfp);
 	printf("Set Mode: %d, Mode: %d\n", tb->o_set_mode, tb->o_mode);
 }
 
@@ -117,6 +108,7 @@ void set_pixel_color(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVcd
 
 	// next 12 bits are color LSB
 	tb->i_data = 0x12;
+	tick(++tickcount, tb, tfp);
 	tb->i_en = 0;
 	tick(++tickcount, tb, tfp);
 
@@ -124,6 +116,7 @@ void set_pixel_color(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVcd
 	tick(++tickcount, tb, tfp);
 
 	tb->i_data = 0x34;
+	tick(++tickcount, tb, tfp);
 	tb->i_en = 0;
 	tick(++tickcount, tb, tfp);
 
@@ -131,24 +124,11 @@ void set_pixel_color(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVcd
 	tick(++tickcount, tb, tfp);
 
 	tb->i_we = 1;
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	// it takes 5 clocks for the result
+	while (!tb->o_set_pixel) tick(++tickcount, tb, tfp);
 	// 	o_pixel_x, o_pixel_y, o_color, o_set_pixel
 	printf("Set Pixel: %d, X: %d, Y: %d, color: %x\n", 
 		tb->o_set_pixel, tb->o_pixel_x, tb->o_pixel_y, tb->o_color);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-
-	// instruction done and all quiet
-	tick(++tickcount, tb, tfp);
-
+	while (tb->o_set_pixel) tick(++tickcount, tb, tfp);
 	printf("Set Pixel: %d, X: %d, Y: %d, color: %x\n", 
 		tb->o_set_pixel, tb->o_pixel_x, tb->o_pixel_y, tb->o_color);
 }

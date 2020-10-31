@@ -10,47 +10,51 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 	output wire [31:0] o_instruction;
 	output reg o_ready;
 
-	reg [31:0] instruction_data;
-	// 0 - instruction, 1 - args
-	reg instruction_or_args;
+	reg [31:0] buf_instruction_data;
 
-	assign o_instruction = o_ready ? instruction_data : 0;
+	assign o_instruction = o_ready ? buf_instruction_data : 0;
 
-	initial instruction_data = 32'h0;
+	initial buf_instruction_data = 32'h0;
 	initial o_ready = 0;
-	initial instruction_or_args = 0;
 
-	reg [1:0] state;
+	reg [1:0] buf_state;
 	localparam [1:0] WAITING = 2'h0,
-		READING = 2'h1,
-		READY = 2'h2;
+		READING_INSTRUCTION = 2'h1,
+		READING_ARGS = 2'h2,
+		READY = 2'h3;
 
 	// always @(posedge i_clk) 
 	// 	if (i_reset) o_ready <= 1'b0;
 	// 	else o_ready <= i_we;
 	always @(posedge i_clk) 
-		if (i_reset) state <= WAITING;
-		else if (!i_we) state <= READING;
-		else if (i_we && state == READING) state <= READY;
+		if (i_reset) buf_state <= WAITING;
+		else if (!i_we && buf_state == WAITING) buf_state <= READING_INSTRUCTION;
+		else if (i_we && buf_state == READING_ARGS) buf_state <= READY;
 
 	always @(posedge i_clk)
-	case (state)
-	WAITING: o_ready <= 1'b0;
-	READING: o_ready <= 1'b0;
+	case (buf_state)
+	WAITING: begin
+	 	o_ready <= 1'b0;
+	end
+	READING_INSTRUCTION: begin
+		o_ready <= 1'b0;
+		buf_state <= buf_state + 1;
+	end
+	READING_ARGS: begin
+		o_ready <= 1'b0;
+	end
 	READY: o_ready <= 1'b1;
 	default: o_ready <= 1'b0;
 	endcase
 
 	always @(posedge i_clk) begin
 		if (!i_we && !i_en) begin 
-			instruction_data [31:0] <= !instruction_or_args 
+			buf_instruction_data [31:0] <= (buf_state == READING_INSTRUCTION)
 				? { 24'b0, i_data[7:0] } 
-				: { instruction_data[23:8], i_data[7:0], instruction_data[7:0] };
+				: { buf_instruction_data[23:8], i_data[7:0], buf_instruction_data[7:0] };
 			o_ack <= 1'b1;
-			if (!instruction_or_args) instruction_or_args <= 1;
 		end else if (o_ready && !i_we) begin
-			instruction_data <= 32'h0;
-			instruction_or_args <= 1'b0;
+			buf_instruction_data <= 32'h0;
 		end else o_ack <= 1'b0;
 	end
 
