@@ -1,7 +1,7 @@
 .PHONY: formal
 .PHONY: all
 .DELETE_ON_ERROR:
-TOPMOD  := instruction_buffer
+TOPMOD  := instruction_decoder
 VLOGFIL := $(TOPMOD)
 VCDFILE := $(TOPMOD).vcd
 SIMPROG := $(TOPMOD)_tb
@@ -30,7 +30,8 @@ $(SIMPROG): $(SIMFILE) $(VDIRFB)/V$(TOPMOD)__ALL.a $(COSIMS)
 		$(VDIRFB)/V$(TOPMOD)__ALL.a -o $(SIMPROG)
 
 $(VCDFILE): $(SIMPROG)
-	./$(SIMPROG) $(TESTFILE)
+	./$(SIMPROG)
+	
 	
 .PHONY: clean
 clean:

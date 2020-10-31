@@ -20,9 +20,26 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 	initial o_ready = 0;
 	initial instruction_or_args = 0;
 
+	reg [1:0] state;
+	localparam [1:0] WAITING = 2'h0,
+		READING = 2'h1,
+		READY = 2'h2;
+
+	// always @(posedge i_clk) 
+	// 	if (i_reset) o_ready <= 1'b0;
+	// 	else o_ready <= i_we;
 	always @(posedge i_clk) 
-		if (i_reset) o_ready <= 1'b0;
-		else o_ready <= i_we;
+		if (i_reset) state <= WAITING;
+		else if (!i_we) state <= READING;
+		else if (i_we && state == READING) state <= READY;
+
+	always @(posedge i_clk)
+	case (state)
+	WAITING: o_ready <= 1'b0;
+	READING: o_ready <= 1'b0;
+	READY: o_ready <= 1'b1;
+	default: o_ready <= 1'b0;
+	endcase
 
 	always @(posedge i_clk) begin
 		if (!i_we && !i_en) begin 
@@ -31,11 +48,10 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 				: { instruction_data[23:8], i_data[7:0], instruction_data[7:0] };
 			o_ack <= 1'b1;
 			if (!instruction_or_args) instruction_or_args <= 1;
-		end else o_ack <= 1'b0;
-		if (o_ready && !i_we) begin
+		end else if (o_ready && !i_we) begin
 			instruction_data <= 32'h0;
 			instruction_or_args <= 1'b0;
-		end
+		end else o_ack <= 1'b0;
 	end
 
 
