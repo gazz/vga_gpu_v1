@@ -1,17 +1,24 @@
 `default_nettype none
 
 module signal_generator(i_clk,
+	o_pixel_x, o_pixel_y, i_color,
 	o_hsync, o_vsync,
 	o_red, o_green, o_blue,
-	i_set_mode, i_mode);
+	i_instruction, i_instruction_ready);
 	
 	input wire i_clk;
+
+	output wire [9:0] o_pixel_x;
+	output wire [9:0] o_pixel_y;
+	input wire [11:0] i_color;
+
 	output wire o_hsync, o_vsync;
 	output wire [3:0] o_red;
 	output wire [3:0] o_green;
 	output wire [3:0] o_blue;
-	input wire i_set_mode;
-	input wire [7:0] i_mode;
+
+	input wire [31:0] i_instruction;
+	input wire i_instruction_ready;
 
 	reg [7:0] curent_mode;
 	initial curent_mode = 8'h0;
@@ -54,15 +61,7 @@ module signal_generator(i_clk,
 		VSYNC_ACTIVE = 3'h2,
 		VSYNC_BACK_PORCH = 3'h3;
 
-	always @(posedge i_clk) if (i_set_mode) curent_mode <= i_mode;
-
-	reg [12:0] pixel_color;
-	// initial pixel_color = 12'hf00;
-	// initial pixel_color = 12'h0f0;
-	// initial pixel_color = 12'h00f;
-	initial pixel_color = 12'h000;
-
-	assign {o_red, o_green, o_blue} = (hor_state == PIXEL_DATA && ver_state == PIXEL_DATA) ? pixel_color : 12'h0;
+	assign {o_red, o_green, o_blue} = (hor_state == PIXEL_DATA && ver_state == PIXEL_DATA) ? i_color : 12'h0;
 	assign o_hsync = (hor_state == HSYNC_ACTIVE) ? 1'b0 : 1'b1;
 	assign o_vsync = (ver_state == VSYNC_ACTIVE) ? 1'b0 : 1'b1;
 

@@ -49,7 +49,7 @@ formal:
 	sby -f instruction_buffer.sby
 
 TOP_MODULE := vga_gpu
-VDEPS  := instruction_decoder.v instruction_buffer.v signal_generator.v
+VDEPS  := instruction_decoder.v instruction_buffer.v signal_generator.v pixel_generator.v
 # VDEPS  := signal_generator.v
 # VDEPS  := 
 .PHONY: bin

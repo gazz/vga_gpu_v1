@@ -1,11 +1,9 @@
 `default_nettype none
 
 module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
-	// signal generator instructions
-	o_mode, o_set_mode,
-	// pixel generator instructions
-	o_pixel_x, o_pixel_y, o_color, o_set_pixel,
-	o_busy);
+	o_busy,
+	// output instruction
+	o_instruction, o_instruction_ready);
 
 	input wire i_clk;
 	input wire i_we;
@@ -13,19 +11,8 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 	input wire [7:0] i_data;
 	output wire o_ack;
 
-	// instruction specific latch registers
-
-	// signal generator instructions
-	output reg [7:0] o_mode;
-	output reg o_set_mode;
-	initial o_set_mode = 1'b0;
-
-	// pixel generator instructions
-	output reg [9:0] o_pixel_x;
-	output reg [9:0] o_pixel_y;
-	output reg [11:0] o_color;
-	output reg o_set_pixel;
-	initial o_set_pixel = 1'b0;
+	output wire [31:0] o_instruction;
+	output wire o_instruction_ready;
 
 	wire [31:0] dec_instruction_data;
 	reg [7:0] instruction;
@@ -41,11 +28,6 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 
 	output reg o_busy;
 	initial o_busy = 0;
-
-	localparam [7:0] NOOP = 8'h0,
-		SET_MODE = 8'h1,
-		SET_BG_COLOR = 8'h2;
-
 
 	initial instr_done = 1'b1;
 	initial instr_loaded = 1'b0;
@@ -86,34 +68,14 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 		endcase
 	end
 
+	assign o_instruction = { instruction_args[23:0], instruction[7:0] };
+	assign o_instruction_ready = (instr_loaded && !instr_done && !reset);
+
 	always @(posedge i_clk) begin
-		if (instr_loaded && !instr_done&& !reset) begin
-			case (instruction)
-			SET_MODE:
-				begin
-					o_set_mode <= 1'b1;
-					o_mode <= instruction_args[7:0];
-					instr_done <= 1'b1;
-				end
-			SET_BG_COLOR:
-				begin
-					o_set_pixel <= 1'b1;
-					o_pixel_x <= 0;
-					o_pixel_y <= 0;
-					o_color[11:0] <= instruction_args[11:0];
-					instr_done <= 1'b1;
-				end
-			default:
-				begin
-					instr_done <= 1'b1;
-					o_set_mode <= 1'b0;
-					o_set_pixel <= 1'b0;
-				end
-			endcase
+		if (instr_loaded && !instr_done && !reset) begin
+			instr_done <= 1'b1;
 		end else begin
 			instr_done <= 1'b0;
-			o_set_mode <= 1'b0;
-			o_set_pixel <= 1'b0;
 		end
 
 	end
