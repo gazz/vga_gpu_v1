@@ -17,11 +17,10 @@ module signal_generator(i_clk,
 	output wire [3:0] o_green;
 	output wire [3:0] o_blue;
 
+	/* verilator lint_off UNUSED */
 	input wire [31:0] i_instruction;
 	input wire i_instruction_ready;
-
-	reg [7:0] curent_mode;
-	initial curent_mode = 8'h0;
+	/* verilator lint_on UNUSED */
 
 	wire [9:0] hor_pixel_clocks;
 	wire [9:0] ver_pixels;
@@ -30,9 +29,9 @@ module signal_generator(i_clk,
 	wire [9:0] hsync_active_clocks;
 	wire [9:0] hsync_back_porch_clocks;
 
-	wire [13:0] vsync_front_porch_lines;
-	wire [13:0] vsync_active_lines;
-	wire [13:0] vsync_back_porch_lines;
+	wire [9:0] vsync_front_porch_lines;
+	wire [9:0] vsync_active_lines;
+	wire [9:0] vsync_back_porch_lines;
 
 	// vga timing inpixels
 	// 640x480, 60Hz 25.175Mhz	
@@ -53,17 +52,20 @@ module signal_generator(i_clk,
 
 	assign ver_pixels = 480; // vertical resolution pixels
 
-	localparam [1:0] PIXEL_DATA = 3'h0,
- 		HSYNC_FRONT_PORCH = 3'h1,
-		HSYNC_ACTIVE = 3'h2,
-		HSYNC_BACK_PORCH = 3'h3,
-		VSYNC_FRONT_PORCH = 3'h1,
-		VSYNC_ACTIVE = 3'h2,
-		VSYNC_BACK_PORCH = 3'h3;
+	localparam [1:0] PIXEL_DATA = 2'h0,
+ 		HSYNC_FRONT_PORCH = 2'h1,
+		HSYNC_ACTIVE = 2'h2,
+		HSYNC_BACK_PORCH = 2'h3,
+		VSYNC_FRONT_PORCH = 2'h1,
+		VSYNC_ACTIVE = 2'h2,
+		VSYNC_BACK_PORCH = 2'h3;
 
 	assign {o_red, o_green, o_blue} = (hor_state == PIXEL_DATA && ver_state == PIXEL_DATA) ? i_color : 12'h0;
 	assign o_hsync = (hor_state == HSYNC_ACTIVE) ? 1'b0 : 1'b1;
 	assign o_vsync = (ver_state == VSYNC_ACTIVE) ? 1'b0 : 1'b1;
+
+	assign o_pixel_x = 0;
+	assign o_pixel_y = 0;
 
 	reg [1:0] hor_state;
 	reg [1:0] ver_state;

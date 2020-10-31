@@ -33,3 +33,5 @@ set_io -nowarn DATA_7 18
 # CONTROL I/O
 set_io -nowarn CNTR_WE 12
 set_io -nowarn CNTR_EN 13
+set_io -nowarn CNTR_ACK 37
+set_io -nowarn CNTR_BUSY 11

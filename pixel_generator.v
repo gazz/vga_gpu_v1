@@ -13,14 +13,19 @@ module pixel_generator(i_clk,
 	input wire i_instruction_ready;
 
 	wire [7:0] instruction;
+	/* verilator lint_off UNUSED */
 	wire [23:0] instruction_args;
+	/* verilator lint_on UNUSED */
 
-	localparam [7:0] SET_BG_COLOR = 8'h01;
+	localparam [7:0] SET_BG_COLOR = 8'h01,
+		SET_RED_BG_COLOR = 8'h02,
+		SET_GREEN_BG_COLOR = 8'h03,
+		SET_BLUE_BG_COLOR = 8'h04;
 
 	reg [11:0] bg_color;
 	initial bg_color = 12'hf00;
 
-	assign o_color = bg_color;
+	assign o_color = (i_pixel_x >= 10'h1 && i_pixel_y >= 10'h1) ? bg_color : bg_color;
 	assign {instruction, instruction_args} = {i_instruction[7:0], i_instruction[31:8]};
 
 	always @(posedge i_clk) begin
@@ -29,6 +34,10 @@ module pixel_generator(i_clk,
 			SET_BG_COLOR: begin
 				bg_color <= instruction_args[11:0];
 			end
+			SET_RED_BG_COLOR: bg_color <= 12'hf00;
+			SET_GREEN_BG_COLOR: bg_color <= 12'h0f0;
+			SET_BLUE_BG_COLOR: bg_color <= 12'h00f;
+			default:;
 			endcase
 		end
 	end

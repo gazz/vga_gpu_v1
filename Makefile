@@ -1,7 +1,7 @@
 .PHONY: formal
 .PHONY: all
 .DELETE_ON_ERROR:
-TOPMOD  := instruction_decoder
+TOPMOD  := vga_top
 VLOGFIL := $(TOPMOD)
 VCDFILE := $(TOPMOD).vcd
 SIMPROG := $(TOPMOD)_tb
@@ -48,18 +48,18 @@ endif
 formal:
 	sby -f instruction_buffer.sby
 
-TOP_MODULE := vga_gpu
-VDEPS  := instruction_decoder.v instruction_buffer.v signal_generator.v pixel_generator.v
+TOP_MODULE := vga_top
+VDEPS  := vga_gpu.v instruction_decoder.v instruction_buffer.v signal_generator.v pixel_generator.v
 # VDEPS  := signal_generator.v
 # VDEPS  := 
 .PHONY: bin
 bin: $(TOP_MODULE).rpt $(TOP_MODULE).bin
 
 $(TOP_MODULE).json: $(TOP_MODULE).v $(VDEPS)
-	yosys -ql $(TOP_MODULE).yslog -p 'synth_ice40 -top top -json $@' $^
+	yosys -ql $(TOP_MODULE).yslog -p 'synth_ice40 -top vga_top -json $@' $^
 
 $(TOP_MODULE).asc: $(TOP_MODULE).json ice40.pcf
-	nextpnr-ice40 -ql $(TOP_MODULE).nplog --up5k --package sg48 --freq 12 --asc $@ --pcf ice40.pcf --top top --json $<
+	nextpnr-ice40 -ql $(TOP_MODULE).nplog --up5k --package sg48 --freq 12 --asc $@ --pcf ice40.pcf --top vga_top --json $<
 
 $(TOP_MODULE).bin: $(TOP_MODULE).asc
 	icepack $< $@

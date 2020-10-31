@@ -28,31 +28,39 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 		case (buf_state)
 		WAITING: begin
 			o_ready <= 1'b0;
+			buf_instruction_data <= 32'h0;
 			if (!i_we) buf_state <= READING_INSTRUCTION;
 		end
 		READING_INSTRUCTION: begin
 			o_ready <= 1'b0;
-			buf_state <= buf_state + 1;
+			if (!i_en) begin
+				o_ack <= 1'b1;
+				buf_instruction_data [7:0] <= i_data[7:0];
+			end else if (o_ack) begin 
+				buf_state <= READING_ARGS;
+				o_ack <= 1'b0;
+			end
 		end
 		READING_ARGS: begin
 			o_ready <= 1'b0;
-			if (i_we) buf_state <= READY;
+			if (!i_en) begin
+				buf_instruction_data [31:8] <= {buf_instruction_data[23:8], i_data[7:0]};
+				o_ack <= 1'b1;
+			end else if (o_ack) begin
+				o_ack <= 1'b0;				
+			end
+			if(i_we) buf_state <= READY;
 		end
-		READY: o_ready <= 1'b1;
-		default: o_ready <= 1'b0;
+		READY: begin
+			o_ready <= 1'b1;
+			o_ack <= 1'b0;
+		end
+		default:;// o_ready <= 1'b0;
 		endcase
-		if (i_reset) buf_state <= WAITING;
-	end
-
-	always @(posedge i_clk) begin
-		if (!i_we && !i_en) begin 
-			buf_instruction_data [31:0] <= (buf_state == READING_INSTRUCTION)
-				? { 24'b0, i_data[7:0] } 
-				: { buf_instruction_data[23:8], i_data[7:0], buf_instruction_data[7:0] };
-			o_ack <= 1'b1;
-		end else if (o_ready && !i_we) begin
-			buf_instruction_data <= 32'h0;
-		end else o_ack <= 1'b0;
+		if (i_reset) begin
+			 buf_state <= WAITING;
+			 o_ready <= 1'b0;
+		end
 	end
 
 
