@@ -1,0 +1,6 @@
+obj_dir
+*_prf
+*_cvr
+*.dSYM
+*_tb
+*.vcd

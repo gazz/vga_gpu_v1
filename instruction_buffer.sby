@@ -1,0 +1,17 @@
+[tasks]
+cvr
+prf
+
+[options]
+prf: mode prove
+cvr: mode cover
+
+[engines]
+smtbmc yices
+
+[script]
+read -formal instruction_buffer.v
+prep -top instruction_buffer
+
+[files]
+instruction_buffer.v
