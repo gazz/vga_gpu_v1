@@ -1,5 +1,6 @@
 `default_nettype none
 
+
 module vga_gpu(i_clk, 
 	// 11bit bus in
 	i_we, i_en, i_data, o_ack, 
@@ -18,8 +19,8 @@ module vga_gpu(i_clk,
 	output wire [3:0] o_green;
 	output wire [3:0] o_blue;
 
-	wire [7:0] o_mode;
-	wire o_set_mode;
+	wire [7:0] mode;
+	wire set_mode;
 
 	wire [9:0] o_pixel_x;
 	wire [9:0] o_pixel_y;
@@ -28,17 +29,18 @@ module vga_gpu(i_clk,
 
 	wire o_busy;
 
-	assign o_hsync = o_busy;
-
 	instruction_decoder decoder(.i_clk(i_clk),
 		.i_we(i_we), .i_en(i_en), .i_data(i_data), .o_ack(o_ack),
-		.o_mode(o_mode), .o_set_mode(o_set_mode),
+		.o_mode(mode), .o_set_mode(set_mode),
 		.o_pixel_x(o_pixel_x), .o_pixel_y(o_pixel_y), .o_color(o_color), .o_set_pixel(o_set_pixel),
-		.o_busy(o_busy)
-		);	
+		.o_busy(o_busy));
+
+	signal_generator signal(.i_clk(i_clk),
+		.o_hsync(o_hsync), .o_vsync(o_vsync),
+		.o_red(o_red), .o_green(o_green), .o_blue(o_blue),
+		.i_set_mode(set_mode), .i_mode(mode));
 
 endmodule
-
 
 module top(CLK12,
 	DATA_0, DATA_1, DATA_2, DATA_3, DATA_4, DATA_5, DATA_6, DATA_7,
@@ -73,4 +75,22 @@ module top(CLK12,
 		.o_red(o_red), .o_green(o_green), .o_blue(o_blue));
 
 endmodule
+
+
+/*
+module top(CLK12,
+	VGA_H_SYNC, VGA_V_SYNC);
+	input wire CLK12;
+	output reg VGA_H_SYNC;
+	output reg VGA_V_SYNC;
+	initial VGA_H_SYNC = 1'b1;
+	initial VGA_V_SYNC = 1'b0;
+
+	always @(posedge CLK12) begin
+		VGA_H_SYNC <= VGA_V_SYNC;
+		VGA_V_SYNC <= VGA_H_SYNC;
+	end
+
+endmodule
+*/
 

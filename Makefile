@@ -49,7 +49,9 @@ formal:
 	sby -f instruction_buffer.sby
 
 TOP_MODULE := vga_gpu
-VDEPS  := instruction_decoder.v instruction_buffer.v
+VDEPS  := instruction_decoder.v instruction_buffer.v signal_generator.v
+# VDEPS  := signal_generator.v
+# VDEPS  := 
 .PHONY: bin
 bin: $(TOP_MODULE).rpt $(TOP_MODULE).bin
 
@@ -64,3 +66,7 @@ $(TOP_MODULE).bin: $(TOP_MODULE).asc
 
 $(TOP_MODULE).rpt: $(TOP_MODULE).asc
 	icetime -d up5k -c 12 -mtr $@ $<
+
+.PHONY: prog
+prog: bin
+	iceprog $(TOP_MODULE).bin
