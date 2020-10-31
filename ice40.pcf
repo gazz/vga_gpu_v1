@@ -1,0 +1,35 @@
+
+# VGA
+set_io		CLK12			35
+set_io		VGA_H_SYNC		42
+set_io		VGA_V_SYNC		36
+
+# VGA RGB
+set_io 		VGA_R0			4   
+set_io		VGA_R1			2   
+set_io		VGA_R2			47  
+set_io		VGA_R3			45
+
+set_io		VGA_G0			43
+set_io		VGA_G1			38
+set_io		VGA_G2			34
+set_io		VGA_G3			31
+
+set_io		VGA_B0			3
+set_io		VGA_B1			48
+set_io		VGA_B2			46
+set_io		VGA_B3			44
+
+# DATA I/O
+set_io -nowarn DATA_0 27 
+set_io -nowarn DATA_1 25
+set_io -nowarn DATA_2 21
+set_io -nowarn DATA_3 19
+set_io -nowarn DATA_4 26
+set_io -nowarn DATA_5 23
+set_io -nowarn DATA_6 20
+set_io -nowarn DATA_7 18
+
+# CONTROL I/O
+set_io -nowarn CNTR_WE 12
+set_io -nowarn CNTR_EN 13

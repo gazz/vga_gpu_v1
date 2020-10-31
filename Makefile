@@ -47,3 +47,20 @@ endif
 
 formal:
 	sby -f instruction_buffer.sby
+
+TOP_MODULE := vga_gpu
+VDEPS  := instruction_decoder.v instruction_buffer.v
+.PHONY: bin
+bin: $(TOP_MODULE).rpt $(TOP_MODULE).bin
+
+$(TOP_MODULE).json: $(TOP_MODULE).v $(VDEPS)
+	yosys -ql $(TOP_MODULE).yslog -p 'synth_ice40 -top top -json $@' $^
+
+$(TOP_MODULE).asc: $(TOP_MODULE).json ice40.pcf
+	nextpnr-ice40 -ql $(TOP_MODULE).nplog --up5k --package sg48 --freq 12 --asc $@ --pcf ice40.pcf --top top --json $<
+
+$(TOP_MODULE).bin: $(TOP_MODULE).asc
+	icepack $< $@
+
+$(TOP_MODULE).rpt: $(TOP_MODULE).asc
+	icetime -d up5k -c 12 -mtr $@ $<

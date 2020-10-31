@@ -24,29 +24,25 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 		READY = 2'h3;
 	initial buf_state = WAITING;
 
-	// always @(posedge i_clk) 
-	// 	if (i_reset) o_ready <= 1'b0;
-	// 	else o_ready <= i_we;
-	always @(posedge i_clk) 
+	always @(posedge i_clk) begin
+		case (buf_state)
+		WAITING: begin
+			o_ready <= 1'b0;
+			if (!i_we) buf_state <= READING_INSTRUCTION;
+		end
+		READING_INSTRUCTION: begin
+			o_ready <= 1'b0;
+			buf_state <= buf_state + 1;
+		end
+		READING_ARGS: begin
+			o_ready <= 1'b0;
+			if (i_we) buf_state <= READY;
+		end
+		READY: o_ready <= 1'b1;
+		default: o_ready <= 1'b0;
+		endcase
 		if (i_reset) buf_state <= WAITING;
-		else if (!i_we && buf_state == WAITING) buf_state <= READING_INSTRUCTION;
-		else if (i_we && buf_state == READING_ARGS) buf_state <= READY;
-
-	always @(posedge i_clk)
-	case (buf_state)
-	WAITING: begin
-	 	o_ready <= 1'b0;
 	end
-	READING_INSTRUCTION: begin
-		o_ready <= 1'b0;
-		buf_state <= buf_state + 1;
-	end
-	READING_ARGS: begin
-		o_ready <= 1'b0;
-	end
-	READY: o_ready <= 1'b1;
-	default: o_ready <= 1'b0;
-	endcase
 
 	always @(posedge i_clk) begin
 		if (!i_we && !i_en) begin 

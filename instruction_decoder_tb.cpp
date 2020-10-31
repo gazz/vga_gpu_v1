@@ -108,7 +108,7 @@ void set_pixel_color(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVcd
 	tick(++tickcount, tb, tfp);
 
 	// next 12 bits are color LSB
-	tb->i_data = 0x12;
+	tb->i_data = 0xc2;
 	tick(++tickcount, tb, tfp);
 	tb->i_en = 0;
 	tick(++tickcount, tb, tfp);
@@ -116,7 +116,7 @@ void set_pixel_color(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVcd
 	tb->i_en = 1;	
 	tick(++tickcount, tb, tfp);
 
-	tb->i_data = 0x34;
+	tb->i_data = 0x3a;
 	tick(++tickcount, tb, tfp);
 	tb->i_en = 0;
 	tick(++tickcount, tb, tfp);
@@ -127,9 +127,9 @@ void set_pixel_color(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVcd
 	tb->i_we = 1;
 	while (!tb->o_set_pixel) tick(++tickcount, tb, tfp);
 	// 	o_pixel_x, o_pixel_y, o_color, o_set_pixel
-	printf("Set Pixel: %d, X: %d, Y: %d, color: %x\n", 
+	printf("Set Pixel: %d, X: %d, Y: %d, color: %0x\n",
 		tb->o_set_pixel, tb->o_pixel_x, tb->o_pixel_y, tb->o_color);
 	while (tb->o_set_pixel) tick(++tickcount, tb, tfp);
-	printf("Set Pixel: %d, X: %d, Y: %d, color: %x\n", 
+	printf("Set Pixel: %d, X: %d, Y: %d, color: %0x\n",
 		tb->o_set_pixel, tb->o_pixel_x, tb->o_pixel_y, tb->o_color);
 }

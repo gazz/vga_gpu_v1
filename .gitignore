@@ -4,3 +4,9 @@ obj_dir
 *.dSYM
 *_tb
 *.vcd
+*.json
+*.yslog
+*.nplog
+*.asc
+*.rpt
+*.bin

@@ -66,6 +66,7 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 		WAITING_INSTRUCTION: begin
 			instr_loaded <= 1'b0;
 			o_busy <= 1'b0;
+			if (o_ready) dec_state <= LOADING_INSTRUCTION;
 		end
 		LOADING_INSTRUCTION: begin
 			o_busy <= 1'b1;
@@ -83,11 +84,6 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 		end
 		default: dec_state <= dec_state + 1;
 		endcase
-	end
-
-	always @(posedge i_clk) begin
-		if (o_ready && dec_state == WAITING_INSTRUCTION) dec_state <= LOADING_INSTRUCTION;
-		else dec_state <= WAITING_INSTRUCTION;
 	end
 
 	always @(posedge i_clk) begin
