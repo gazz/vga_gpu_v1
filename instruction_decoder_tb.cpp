@@ -51,9 +51,6 @@ int main(int argc, char **argv) {
 	tb->i_en = 1;
 	tb->i_data = 0;
 	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-
 
 	set_display_mode(tickcount, tb, tfp);
 
@@ -68,8 +65,9 @@ int main(int argc, char **argv) {
 
 void set_display_mode(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVcdC* tfp) {
 	// set display mode
-	tb->i_we = 0;
 	tb->i_data = 1;
+	tick(++tickcount, tb, tfp);
+	tb->i_we = 0;
 	tick(++tickcount, tb, tfp);
 
 	tb->i_en = 0;
@@ -90,14 +88,17 @@ void set_display_mode(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVc
 	tb->i_we = 1;
 	while (!tb->o_set_mode) tick(++tickcount, tb, tfp);
 	printf("Set Mode: %d, Mode: %d\n", tb->o_set_mode, tb->o_mode);
+
 	while (tb->o_set_mode) tick(++tickcount, tb, tfp);
 	printf("Set Mode: %d, Mode: %d\n", tb->o_set_mode, tb->o_mode);
 }
 
 void set_pixel_color(unsigned &tickcount, Vinstruction_decoder *tb, VerilatedVcdC* tfp) {
 	// set display mode
-	tb->i_we = 0;
 	tb->i_data = 2;
+	tick(++tickcount, tb, tfp);
+
+	tb->i_we = 0;
 	tick(++tickcount, tb, tfp);
 
 	tb->i_en = 0;

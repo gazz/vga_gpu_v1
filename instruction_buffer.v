@@ -22,6 +22,7 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 		READING_INSTRUCTION = 2'h1,
 		READING_ARGS = 2'h2,
 		READY = 2'h3;
+	initial buf_state = WAITING;
 
 	// always @(posedge i_clk) 
 	// 	if (i_reset) o_ready <= 1'b0;

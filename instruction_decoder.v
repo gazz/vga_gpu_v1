@@ -58,11 +58,11 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 		EXECUTING_INSTRUCTION = 3'h2,
 		WAITING_RESET = 3'h5;
 
-	reg [2:0] state;
-	initial state = 3'd0;
+	reg [2:0] dec_state;
+	initial dec_state = 3'd0;
 
 	always @(posedge i_clk) begin
-		case (state)
+		case (dec_state)
 		WAITING_INSTRUCTION: begin
 			instr_loaded <= 1'b0;
 			o_busy <= 1'b0;
@@ -72,22 +72,22 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 			instruction <= dec_instruction_data[7:0];
 			instruction_args <= dec_instruction_data[31:8];
 			instr_loaded <= 1'b1;
-			state <= state + 1;
+			dec_state <= dec_state + 1;
 		end
 		EXECUTING_INSTRUCTION: begin
 			instr_loaded <= 1'b0;
-			state <= state + 1;
+			dec_state <= dec_state + 1;
 		end
 		WAITING_RESET: begin
-			state <= WAITING_INSTRUCTION;
+			dec_state <= WAITING_INSTRUCTION;
 		end
-		default: state <= state + 1;
+		default: dec_state <= dec_state + 1;
 		endcase
 	end
 
 	always @(posedge i_clk) begin
-		if (o_ready && state == WAITING_INSTRUCTION) state <= LOADING_INSTRUCTION;
-		else state <= WAITING_INSTRUCTION;
+		if (o_ready && dec_state == WAITING_INSTRUCTION) dec_state <= LOADING_INSTRUCTION;
+		else dec_state <= WAITING_INSTRUCTION;
 	end
 
 	always @(posedge i_clk) begin
