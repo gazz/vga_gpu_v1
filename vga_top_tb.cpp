@@ -50,17 +50,20 @@ int main(int argc, char **argv) {
 	tb->trace(tfp, 99);
 	tfp->open("vga_top.vcd");
 
-// i_clk, i_we, i_en, i_data, o_ack,
-// 	// signal generator instructions
-// 	// pixel generator instructions
-// 	);
-
 	tb->CNTR_WE = 1;
 	tb->CNTR_EN = 1;
 	set_data_byte(tb, 0);
 	tick(++tickcount, tb, tfp);
 
 	set_bg(tickcount, tb, tfp, 0xabc);
+
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+
+	// return 0;
 
 	while (!tb->CNTR_BUSY) tick(++tickcount, tb, tfp);
 
@@ -97,18 +100,25 @@ void set_bg(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int bg) {
 
 	tb->CNTR_EN = 0;
 	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
 
 	tb->CNTR_EN = 1;
 	tick(++tickcount, tb, tfp);
-
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
 
 	set_data_byte(tb, ((bg >> 8) & 0xff ));
 	tick(++tickcount, tb, tfp);
 
 	tb->CNTR_EN = 0;
 	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
 
 	tb->CNTR_EN = 1;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
 	tick(++tickcount, tb, tfp);
 
 	set_data_byte(tb, (bg & 0xff));
@@ -116,8 +126,12 @@ void set_bg(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int bg) {
 
 	tb->CNTR_EN = 0;
 	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
 
 	tb->CNTR_EN = 1;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
 	tick(++tickcount, tb, tfp);
 
 	set_data_byte(tb, 0xab);
@@ -125,8 +139,12 @@ void set_bg(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int bg) {
 
 	tb->CNTR_EN = 0;
 	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
 
 	tb->CNTR_EN = 1;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
 	tick(++tickcount, tb, tfp);
 
 

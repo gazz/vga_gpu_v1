@@ -18,13 +18,17 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 	initial o_ready = 0;
 
 	reg [7:0] local_input;
+	reg [7:0] local_prev_input;
 	reg local_en;
 	reg local_we;
 
 	always @(posedge i_clk) begin
 		local_we <= i_we;
-		local_en <= i_en;
-		if (!i_en) local_input[7:0] <= i_data[7:0];
+		local_en <= (local_prev_input[7:0] == i_data[7:0]) ? i_en : local_en;
+		if (!i_en) begin
+			local_prev_input[7:0] <= local_input[7:0];
+			local_input[7:0] <= i_data[7:0];
+		end
 	end
 
 	reg [1:0] buf_state;
