@@ -32,6 +32,7 @@ module vga_gpu(i_clk,
 	wire [11:0] color;
 
 	pixel_generator pixels(.i_clk(i_clk),
+		.i_vsync(!o_vsync),
 		.i_pixel_x(pixel_x), .i_pixel_y(pixel_y), .o_color(color),
 		.i_instruction(instruction), .i_instruction_ready(instruction_ready));
 

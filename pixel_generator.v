@@ -2,9 +2,11 @@
 
 
 module pixel_generator(i_clk,
+	i_vsync,
 	i_pixel_x, i_pixel_y, o_color,
 	i_instruction, i_instruction_ready);
 	input wire i_clk;
+	input wire i_vsync;
 	input wire [9:0] i_pixel_x;
 	input wire [9:0] i_pixel_y;
 	output wire [11:0] o_color;
@@ -24,6 +26,7 @@ module pixel_generator(i_clk,
 		SET_BLACK_BG_COLOR = 8'h05,
 		SET_WHITE_BG_COLOR = 8'h06;
 
+	reg [11:0] pending_bg_color;
 	reg [11:0] bg_color;
 	initial bg_color = 12'hf00;
 
@@ -45,16 +48,17 @@ module pixel_generator(i_clk,
 		if (l_instruction_ready) begin
 			case (instruction)
 			SET_BG_COLOR: begin
-				bg_color <= instruction_args[11:0];
+				pending_bg_color <= instruction_args[11:0];
 			end
-			SET_RED_BG_COLOR: bg_color <= 12'hf00;
-			SET_GREEN_BG_COLOR: bg_color <= 12'h0f0;
-			SET_BLUE_BG_COLOR: bg_color <= 12'h00f;
-			SET_BLACK_BG_COLOR: bg_color <= 12'h000;
-			SET_WHITE_BG_COLOR: bg_color <= 12'hfff;
+			SET_RED_BG_COLOR: pending_bg_color <= 12'hf00;
+			SET_GREEN_BG_COLOR: pending_bg_color <= 12'h0f0;
+			SET_BLUE_BG_COLOR: pending_bg_color <= 12'h00f;
+			SET_BLACK_BG_COLOR: pending_bg_color <= 12'h000;
+			SET_WHITE_BG_COLOR: pending_bg_color <= 12'hfff;
 			default:;
 			endcase
 		end
+		if (i_vsync) bg_color <= pending_bg_color;
 	end
 
 endmodule
