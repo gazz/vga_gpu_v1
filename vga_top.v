@@ -23,24 +23,15 @@ module vga_top(CLK12,
 	wire [3:0] o_blue;
 
 	assign i_data[7:0] = {DATA_7, DATA_6, DATA_5, DATA_4, DATA_3, DATA_2, DATA_1, DATA_0};
-	assign {VGA_R0,VGA_R1,VGA_R2,VGA_R3} = o_red;
-	assign {VGA_G0,VGA_G1,VGA_G2,VGA_G3} = o_green;
-	assign {VGA_B0,VGA_B1,VGA_B2,VGA_B3} = o_blue;
+	// assign {VGA_R0,VGA_R1,VGA_R2,VGA_R3} = o_red;
+	assign {VGA_R3,VGA_R2,VGA_R1,VGA_R0} = o_red[3:0];
+	assign {VGA_G3,VGA_G2,VGA_G1,VGA_G0} = o_green[3:0];
+	assign {VGA_B3,VGA_B2,VGA_B1,VGA_B0} = o_blue[3:0];
 
 	wire inv_cntr_ack;
 	assign CNTR_ACK = !inv_cntr_ack;
 	reg inv_cntr_busy;
 	assign CNTR_BUSY = !inv_cntr_busy;
-
-	// wire inv_busy;
-	// reg inv_cntr_busy;
-	// initial inv_cntr_busy = 1;
-	// assign CNTR_BUSY = inv_cntr_busy;
-
-	// always @(posedge CLK12) begin
-	// 	if (!CNTR_WE) inv_cntr_busy <= 1'b0;
-	// 	if (!CNTR_WE) inv_cntr_busy <= 1'b0;
-	// end
 
 	vga_gpu wiring(.i_clk(CLK12),
 		.i_we(CNTR_WE), .i_en(CNTR_EN), .i_data(i_data), .o_ack(inv_cntr_ack), .o_busy(inv_cntr_busy),

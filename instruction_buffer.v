@@ -12,10 +12,20 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 
 	reg [31:0] buf_instruction_data;
 
-	assign o_instruction = o_ready ? buf_instruction_data : 0;
+	assign o_instruction[31:0] = o_ready ? buf_instruction_data[31:0] : 32'h0;
 
 	initial buf_instruction_data = 32'h0;
 	initial o_ready = 0;
+
+	reg [7:0] local_input;
+	reg local_en;
+	reg local_we;
+
+	always @(posedge i_clk) begin
+		local_we <= i_we;
+		local_en <= i_en;
+		if (!i_en) local_input[7:0] <= i_data[7:0];
+	end
 
 	reg [1:0] buf_state;
 	localparam [1:0] WAITING = 2'h0,
@@ -28,14 +38,14 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 		case (buf_state)
 		WAITING: begin
 			o_ready <= 1'b0;
-			buf_instruction_data <= 32'h0;
-			if (!i_we) buf_state <= READING_INSTRUCTION;
+			buf_instruction_data[31:0] <= 32'h0;
+			if (!local_we) buf_state <= READING_INSTRUCTION;
 		end
 		READING_INSTRUCTION: begin
 			o_ready <= 1'b0;
-			if (!i_en) begin
+			if (!local_en) begin
 				o_ack <= 1'b1;
-				buf_instruction_data [7:0] <= i_data[7:0];
+				buf_instruction_data [7:0] <= local_input[7:0];
 			end else if (o_ack) begin 
 				buf_state <= READING_ARGS;
 				o_ack <= 1'b0;
@@ -43,19 +53,18 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 		end
 		READING_ARGS: begin
 			o_ready <= 1'b0;
-			if (!i_en) begin
-				buf_instruction_data [31:8] <= {buf_instruction_data[23:8], i_data[7:0]};
+			if (!local_en && !o_ack) begin
+				buf_instruction_data [31:8] <= {buf_instruction_data[23:8], local_input[7:0]};
 				o_ack <= 1'b1;
-			end else if (o_ack) begin
-				o_ack <= 1'b0;				
-			end
-			if(i_we) buf_state <= READY;
+			end else if (local_en && o_ack) begin
+				o_ack <= 1'b0;
+			end else if (local_we) buf_state <= READY;
 		end
 		READY: begin
 			o_ready <= 1'b1;
 			o_ack <= 1'b0;
 		end
-		default:;// o_ready <= 1'b0;
+		default:;
 		endcase
 		if (i_reset) begin
 			 buf_state <= WAITING;
@@ -71,19 +80,19 @@ module instruction_buffer(i_clk, i_reset, i_we, i_en, i_data, o_ack, o_instructi
 		f_past_valid <= 1'b1;
 
 	always @(posedge i_clk)
-		if (f_past_valid && o_ack) assume(!i_en);
+		if (f_past_valid && o_ack) assume(!local_en);
 
 	always @(posedge i_clk)
-		if (f_past_valid && o_ack) assert(!i_we && !i_en);
+		if (f_past_valid && o_ack) assert(!local_we && !local_en);
 
 	always @(posedge i_clk)
-		if (i_we) assume(i_en);
+		if (local_we) assume(local_en);
 
 	always @(posedge i_clk)
-		if (o_ready) assume(i_en && i_we);
+		if (o_ready) assume(local_en && local_we);
 
 	always @(posedge i_clk)
-		if (f_past_valid && i_we)
+		if (f_past_valid && local_we)
 			assume(o_ready);
 
 	always @(posedge i_clk)

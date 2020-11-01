@@ -15,11 +15,7 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 	output wire o_instruction_ready;
 
 	wire [31:0] dec_instruction_data;
-	reg [7:0] instruction;
-	/* verilator lint_off UNUSED */
-	// we disable linter as we do not have all the instructions fleshed out just yet
-	reg [23:0] instruction_args;
-	/* verilator lint_on UNUSED */
+	reg [31:0] instruction;
 	reg instr_done;
 	reg instr_loaded;
 
@@ -52,15 +48,14 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 		end
 		LOADING_INSTRUCTION: begin
 			o_busy <= 1'b1;
-			instruction <= dec_instruction_data[7:0];
-			instruction_args <= dec_instruction_data[31:8];
-			instr_loaded <= 1'b1;
+			instruction[31:0] <= dec_instruction_data[31:0];
 			instr_done <= 1'b0;
 			dec_state <= EXECUTING_INSTRUCTION;
-			excute_counter <= 0;
+			excute_counter <= 1;
 
 		end
 		EXECUTING_INSTRUCTION: begin
+			instr_loaded <= 1'b1;
 			if (excute_counter == 0) begin
 				dec_state <= WAITING_RESET;
 				instr_done <= 1'b1;
@@ -75,7 +70,7 @@ module instruction_decoder(i_clk, i_we, i_en, i_data, o_ack,
 		endcase
 	end
 
-	assign o_instruction = { instruction_args[23:0], instruction[7:0] };
+	assign o_instruction[31:0] = instruction[31:0];
 	assign o_instruction_ready = (instr_loaded && !instr_done && !reset);
 
 	instruction_buffer buffer(
