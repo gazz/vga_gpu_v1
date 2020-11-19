@@ -100,8 +100,8 @@ module signal_generator(i_clk,
 			end
 			HSYNC_BACK_PORCH: begin
 				hor_counter <= hor_pixel_clocks;
-				pixel_counter <= 8;
-				o_pixel_x_clock <= 1'b1;
+				pixel_counter <= 7;
+				// o_pixel_x_clock <= 1'b1;
 			end
 			endcase
 		end else begin

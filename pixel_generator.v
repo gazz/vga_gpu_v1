@@ -57,10 +57,13 @@ module pixel_generator(i_clk,
 	assign instruction[7:0] = l_instruction[7:0];
 	assign instruction_args[23:0] = l_instruction[31:8];
 
-	/* verilator lint_off WIDTH */
-	// wire [10:0] arg_pixel_index;
-	//assign arg_pixel_index[10:0] = instruction_args[10:0] * 3;
-	/* verilator lint_on WIDTH */
+	/* verilator lint_off UNUSED */
+	wire [10:0] arg_pixel_index;
+	assign arg_pixel_index[10:0] = instruction_args[10:0];
+	/* verilator lint_on UNUSED */
+
+	wire [6:0] palette_index;
+	assign palette_index[6:0] = {screen_buffer[row_offset + pixel_index +: 3], 4'b0};
 
 	always @(posedge i_clk) begin
 		if (l_instruction_ready) begin
@@ -87,11 +90,8 @@ module pixel_generator(i_clk,
 
 		if (i_hsync) begin
 			pixel_index <= 0;
-			o_color <= palette[(screen_buffer[row_offset +: 3] * 12) +: 12];
 		end else if (i_pixel_x_clock) begin
 			pixel_index <= pixel_index + 3;
-			// o_color <= palette[(row_buffer[pixel_index +: 3] * 12) +: 12];
-			o_color <= palette[(screen_buffer[row_offset + pixel_index +: 3] * 12) +: 12];
 		end
 
 		if (i_screen_reset) begin
@@ -99,8 +99,6 @@ module pixel_generator(i_clk,
 			pixel_row <= 0;
 			pixel_row_counter <= 24;
 			row_offset <= 0;
-
-			o_color <= palette[(screen_buffer[0 +: 3] * 12) +: 12];
 		end
 
 		if (i_pixel_y_clock) begin
@@ -112,13 +110,13 @@ module pixel_generator(i_clk,
 				pixel_row_counter <= 24;
 			end
 			screen_v_reset <= 1'b1;
-			// o_color <= palette[(screen_buffer[row_offset + pixel_index +: 3] * 12) +: 12];
 		end
 
 		if (screen_v_reset) begin
-			o_color <= palette[(screen_buffer[row_offset + pixel_index +: 3] * 12) +: 12];
 			screen_v_reset <= 1'b0;
 		end
+
+		o_color <= palette[palette_index +: 12];
 
 	end
 
@@ -134,10 +132,11 @@ module pixel_generator(i_clk,
 									{1{3'h7, 3'h5, 3'h4, 3'h5, 3'h4, 3'h5, 3'h4, 3'h0}},
 									{73{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0}},
 									{1{3'h7, 3'h5, 3'h4, 3'h5, 3'h4, 3'h5, 3'h4, 3'h0}}};
-	reg [95:0] palette;
-	initial palette[95:0] = {12'hff0,12'h0ff,12'hf0f,12'h00f,12'h0f0,12'hf00,12'hfff,12'h000};
+	// reg [95:0] palette;
+	// initial palette[95:0] = {12'hff0,12'h0ff,12'hf0f,12'h00f,12'h0f0,12'hf00,12'hfff,12'h000};
+	reg [127:0] palette;
+	initial palette[127:0] = {16'hff0,16'h0ff,16'hf0f,16'h00f,16'h0f0,16'hf00,16'hfff,16'h000};
 
-	// assign o_color = (i_pixel_x >= 10'h1 && i_pixel_y >= 10'h1) ? bg_color : bg_color;
 	reg [10:0] row_offset;
 	initial row_offset = 0;
 
