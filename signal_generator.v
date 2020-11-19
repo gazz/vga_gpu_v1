@@ -88,7 +88,9 @@ module signal_generator(i_clk,
 			PIXEL_DATA: hor_counter <= hsync_front_porch_clocks;
 			HSYNC_FRONT_PORCH: hor_counter <= hsync_active_clocks;
 			HSYNC_ACTIVE: begin 
-				if (ver_state == PIXEL_DATA) o_pixel_y_clock <= 1'b1;
+				if (ver_state == PIXEL_DATA) begin
+					o_pixel_y_clock <= 1'b1;
+				end
 				hor_counter <= hsync_back_porch_clocks;
 				ver_counter <= ver_counter - 1;
 

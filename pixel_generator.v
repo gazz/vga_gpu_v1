@@ -107,10 +107,11 @@ module pixel_generator(i_clk,
 			pixel_row_counter <= pixel_row_counter - 1;
 			if (pixel_row_counter == 1) begin
 				pixel_row <= pixel_row + 1;
-				row_offset <= row_offset + 90;
+				row_offset <= row_offset + 93;
+				pixel_index <= 0;
 			end
 			screen_v_reset <= 1'b1;
-			o_color <= palette[(screen_buffer[row_offset + pixel_index +: 3] * 12) +: 12];
+			// o_color <= palette[(screen_buffer[row_offset + pixel_index +: 3] * 12) +: 12];
 		end
 
 		// o_color <= palette[(12 * 3 -1) +: 12];
@@ -128,15 +129,9 @@ module pixel_generator(i_clk,
 	// lets try to use simple registers as screen buffer
 	reg [1799:0] screen_buffer;
 	// initial screen_buffer[1799:0] = {{75{3'h0}}, {75{3'h1}}};
-	initial screen_buffer[1799:0] = {{75{3'h7}}, {75{3'h6}}, {75{3'h5}}, {75{3'h4}},
-									{75{3'h3}}, {75{3'h2}}, {75{3'h1}}, 
+	initial screen_buffer[1799:0] = {{6{3'h0}},
 									// {75{3'h0}}
-									{43{3'h0}},
-									{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0},
-									{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0},
-									{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0},
-									{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0}
-									 };
+									{74{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0}}};
 	reg [95:0] palette;
 	initial palette[95:0] = {12'hff0,12'h0ff,12'hf0f,12'h00f,12'h0f0,12'hf00,12'hfff,12'h000};
 
