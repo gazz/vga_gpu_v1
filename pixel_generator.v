@@ -39,7 +39,7 @@ module pixel_generator(i_clk,
 	initial bg_color = 12'hf00;
 
 	reg [7:0] pixel_row;
-	reg [3:0] pixel_row_counter;
+	reg [4:0] pixel_row_counter;
 	initial pixel_row_counter = 0;
 	initial pixel_row = 0;
 
@@ -59,7 +59,7 @@ module pixel_generator(i_clk,
 
 	/* verilator lint_off WIDTH */
 	// wire [10:0] arg_pixel_index;
-	// assign arg_pixel_index[10:0] = instruction_args[10:0] * 3;
+	//assign arg_pixel_index[10:0] = instruction_args[10:0] * 3;
 	/* verilator lint_on WIDTH */
 
 	always @(posedge i_clk) begin
@@ -97,7 +97,7 @@ module pixel_generator(i_clk,
 		if (i_screen_reset) begin
 			pixel_index <= 0;
 			pixel_row <= 0;
-			pixel_row_counter <= 0;
+			pixel_row_counter <= 24;
 			row_offset <= 0;
 
 			o_color <= palette[(screen_buffer[0 +: 3] * 12) +: 12];
@@ -107,14 +107,14 @@ module pixel_generator(i_clk,
 			pixel_row_counter <= pixel_row_counter - 1;
 			if (pixel_row_counter == 1) begin
 				pixel_row <= pixel_row + 1;
-				row_offset <= row_offset + 93;
+				row_offset <= row_offset + 90;
 				pixel_index <= 0;
+				pixel_row_counter <= 24;
 			end
 			screen_v_reset <= 1'b1;
 			// o_color <= palette[(screen_buffer[row_offset + pixel_index +: 3] * 12) +: 12];
 		end
 
-		// o_color <= palette[(12 * 3 -1) +: 12];
 		if (screen_v_reset) begin
 			o_color <= palette[(screen_buffer[row_offset + pixel_index +: 3] * 12) +: 12];
 			screen_v_reset <= 1'b0;
@@ -129,9 +129,11 @@ module pixel_generator(i_clk,
 	// lets try to use simple registers as screen buffer
 	reg [1799:0] screen_buffer;
 	// initial screen_buffer[1799:0] = {{75{3'h0}}, {75{3'h1}}};
-	initial screen_buffer[1799:0] = {{6{3'h0}},
+	initial screen_buffer[1799:0] = {
 									// {75{3'h0}}
-									{74{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0}}};
+									{1{3'h7, 3'h5, 3'h4, 3'h5, 3'h4, 3'h5, 3'h4, 3'h0}},
+									{73{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0}},
+									{1{3'h7, 3'h5, 3'h4, 3'h5, 3'h4, 3'h5, 3'h4, 3'h0}}};
 	reg [95:0] palette;
 	initial palette[95:0] = {12'hff0,12'h0ff,12'hf0f,12'h00f,12'h0f0,12'hf00,12'hfff,12'h000};
 

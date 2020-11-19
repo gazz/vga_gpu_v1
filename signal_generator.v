@@ -41,10 +41,10 @@ module signal_generator(i_clk,
 	// ver: 480				| 11			| 2		| 31
 	// with 12MHz clock, 1 clock pulse => 0.083us
 	// 640x480 pixel takes 0.039us, so ~2 pixels per pulse
-	assign hor_pixel_clocks = 304; // horizontal resolution pixels
-	assign hsync_front_porch_clocks = 8;
+	assign hor_pixel_clocks = 298; // horizontal resolution pixels
+	assign hsync_front_porch_clocks = 11;
 	assign hsync_active_clocks = 46;
-	assign hsync_back_porch_clocks = 22;
+	assign hsync_back_porch_clocks = 25;
 
 	// parameter ver_clock_pad = 75;
 	assign vsync_front_porch_lines = 15;
@@ -100,7 +100,7 @@ module signal_generator(i_clk,
 			end
 			HSYNC_BACK_PORCH: begin
 				hor_counter <= hor_pixel_clocks;
-				pixel_counter <= 10;
+				pixel_counter <= 8;
 				o_pixel_x_clock <= 1'b1;
 			end
 			endcase
