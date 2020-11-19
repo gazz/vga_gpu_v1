@@ -50,42 +50,50 @@ int main(int argc, char **argv) {
 	tb->trace(tfp, 99);
 	tfp->open("vga_top.vcd");
 
-	tb->CNTR_WE = 1;
-	tb->CNTR_EN = 1;
-	set_data_byte(tb, 0);
-	tick(++tickcount, tb, tfp);
+	// tb->CNTR_WE = 1;
+	// tb->CNTR_EN = 1;
+	// set_data_byte(tb, 0);
+	// tick(++tickcount, tb, tfp);
 
-	set_bg(tickcount, tb, tfp, 0xabc);
+	// set_bg(tickcount, tb, tfp, 0xabc);
 
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
 
-	// return 0;
+	// // return 0;
 
-	while (!tb->CNTR_BUSY) tick(++tickcount, tb, tfp);
+	// while (!tb->CNTR_BUSY) tick(++tickcount, tb, tfp);
 
-	set_bg(tickcount, tb, tfp, 0x987);
+	// set_bg(tickcount, tb, tfp, 0x987);
 
-	while (!tb->CNTR_BUSY) tick(++tickcount, tb, tfp);
+	// while (!tb->CNTR_BUSY) tick(++tickcount, tb, tfp);
 
-	set_bg(tickcount, tb, tfp, 0x345);
+	// set_bg(tickcount, tb, tfp, 0x345);
 
-	while (!tb->CNTR_BUSY) tick(++tickcount, tb, tfp);
+	// while (!tb->CNTR_BUSY) tick(++tickcount, tb, tfp);
 
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
-	tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
+	// tick(++tickcount, tb, tfp);
 
 
 	// set_pixel_color(tickcount, tb, tfp);
 
 	// while (tb->o_busy) tick(++tickcount, tb, tfp);
+
+
+	// simulate VGA for 12Mhz & 60 clokcs
+	// int num_ticks = 12000000 / 60;
+	int num_ticks = 12000000 / 30;
+	for (int i = 0; i< num_ticks; i++) {
+		tick(++tickcount, tb, tfp);
+	}
 
 }
 

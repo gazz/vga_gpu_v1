@@ -2,14 +2,19 @@
 
 
 module pixel_generator(i_clk,
-	i_vsync,
-	i_pixel_x, i_pixel_y, o_color,
+	i_vsync, i_hsync,
+	i_screen_reset, i_pixel_x_clock, i_pixel_y_clock, o_color,
 	i_instruction, i_instruction_ready);
 	input wire i_clk;
 	input wire i_vsync;
-	input wire [9:0] i_pixel_x;
-	input wire [9:0] i_pixel_y;
-	output wire [11:0] o_color;
+	input wire i_hsync;
+
+	input wire i_screen_reset;
+	input wire i_pixel_x_clock;
+	input wire i_pixel_y_clock;
+
+	output reg [11:0] o_color;
+
 	// instructions
 	input wire [31:0] i_instruction;
 	input wire i_instruction_ready;
@@ -24,11 +29,20 @@ module pixel_generator(i_clk,
 		SET_GREEN_BG_COLOR = 8'h03,
 		SET_BLUE_BG_COLOR = 8'h04,
 		SET_BLACK_BG_COLOR = 8'h05,
-		SET_WHITE_BG_COLOR = 8'h06;
+		SET_WHITE_BG_COLOR = 8'h06,
+		SET_PIXEL = 8'h07;
 
 	reg [11:0] pending_bg_color;
+	/* verilator lint_off UNUSED */
 	reg [11:0] bg_color;
+	/* verilator lint_on UNUSED */
 	initial bg_color = 12'hf00;
+
+	reg [7:0] pixel_row;
+	reg [3:0] pixel_row_counter;
+	initial pixel_row_counter = 0;
+	initial pixel_row = 0;
+
 
 	// local copy of registers
 	reg [31:0] l_instruction;
@@ -40,9 +54,13 @@ module pixel_generator(i_clk,
 		else l_instruction[31:0] <= 32'h0;
 	end
 
-	assign o_color = (i_pixel_x >= 10'h1 && i_pixel_y >= 10'h1) ? bg_color : bg_color;
 	assign instruction[7:0] = l_instruction[7:0];
 	assign instruction_args[23:0] = l_instruction[31:8];
+
+	/* verilator lint_off WIDTH */
+	// wire [10:0] arg_pixel_index;
+	// assign arg_pixel_index[10:0] = instruction_args[10:0] * 3;
+	/* verilator lint_on WIDTH */
 
 	always @(posedge i_clk) begin
 		if (l_instruction_ready) begin
@@ -55,10 +73,79 @@ module pixel_generator(i_clk,
 			SET_BLUE_BG_COLOR: pending_bg_color <= 12'h00f;
 			SET_BLACK_BG_COLOR: pending_bg_color <= 12'h000;
 			SET_WHITE_BG_COLOR: pending_bg_color <= 12'hfff;
+			SET_PIXEL: begin
+				// screen_buffer[arg_pixel_index +: 3] <= instruction_args[12:10];
+			end 
 			default:;
 			endcase
 		end
-		if (i_vsync) bg_color <= pending_bg_color;
+
+		if (i_vsync) begin 
+			bg_color <= pending_bg_color;
+			pixel_row <= 0;
+		end
+
+		if (i_hsync) begin
+			pixel_index <= 0;
+			o_color <= palette[(screen_buffer[row_offset +: 3] * 12) +: 12];
+		end else if (i_pixel_x_clock) begin
+			pixel_index <= pixel_index + 3;
+			// o_color <= palette[(row_buffer[pixel_index +: 3] * 12) +: 12];
+			o_color <= palette[(screen_buffer[row_offset + pixel_index +: 3] * 12) +: 12];
+		end
+
+		if (i_screen_reset) begin
+			pixel_index <= 0;
+			pixel_row <= 0;
+			pixel_row_counter <= 0;
+			row_offset <= 0;
+
+			o_color <= palette[(screen_buffer[0 +: 3] * 12) +: 12];
+		end
+
+		if (i_pixel_y_clock) begin
+			pixel_row_counter <= pixel_row_counter - 1;
+			if (pixel_row_counter == 1) begin
+				pixel_row <= pixel_row + 1;
+				row_offset <= row_offset + 90;
+			end
+			screen_v_reset <= 1'b1;
+			o_color <= palette[(screen_buffer[row_offset + pixel_index +: 3] * 12) +: 12];
+		end
+
+		// o_color <= palette[(12 * 3 -1) +: 12];
+		if (screen_v_reset) begin
+			o_color <= palette[(screen_buffer[row_offset + pixel_index +: 3] * 12) +: 12];
+			screen_v_reset <= 1'b0;
+		end
+
 	end
+
+	reg screen_v_reset;
+	initial screen_v_reset = 0;
+
+
+	// lets try to use simple registers as screen buffer
+	reg [1799:0] screen_buffer;
+	// initial screen_buffer[1799:0] = {{75{3'h0}}, {75{3'h1}}};
+	initial screen_buffer[1799:0] = {{75{3'h7}}, {75{3'h6}}, {75{3'h5}}, {75{3'h4}},
+									{75{3'h3}}, {75{3'h2}}, {75{3'h1}}, 
+									// {75{3'h0}}
+									{43{3'h0}},
+									{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0},
+									{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0},
+									{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0},
+									{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0}
+									 };
+	reg [95:0] palette;
+	initial palette[95:0] = {12'hff0,12'h0ff,12'hf0f,12'h00f,12'h0f0,12'hf00,12'hfff,12'h000};
+
+	// assign o_color = (i_pixel_x >= 10'h1 && i_pixel_y >= 10'h1) ? bg_color : bg_color;
+	reg [10:0] row_offset;
+	initial row_offset = 0;
+
+	reg [10:0] pixel_index;
+	initial pixel_index = 0;
+
 
 endmodule

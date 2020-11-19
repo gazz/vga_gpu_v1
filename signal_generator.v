@@ -1,15 +1,16 @@
 `default_nettype none
 
 module signal_generator(i_clk,
-	o_pixel_x, o_pixel_y, i_color,
+	o_screen_reset, o_pixel_x_clock, o_pixel_y_clock, i_color,
 	o_hsync, o_vsync,
 	o_red, o_green, o_blue,
 	i_instruction, i_instruction_ready);
 	
 	input wire i_clk;
 
-	output wire [9:0] o_pixel_x;
-	output wire [9:0] o_pixel_y;
+	output reg o_screen_reset;
+	output reg o_pixel_x_clock;
+	output reg o_pixel_y_clock;
 	input wire [11:0] i_color;
 
 	output wire o_hsync, o_vsync;
@@ -64,8 +65,9 @@ module signal_generator(i_clk,
 	assign o_hsync = (hor_state == HSYNC_ACTIVE) ? 1'b0 : 1'b1;
 	assign o_vsync = (ver_state == VSYNC_ACTIVE) ? 1'b0 : 1'b1;
 
-	assign o_pixel_x = 0;
-	assign o_pixel_y = 0;
+	initial o_pixel_x_clock = 1'b0;
+	initial o_pixel_y_clock = 1'b0;
+	initial o_screen_reset = 1'b0;
 
 	reg [1:0] hor_state;
 	reg [1:0] ver_state;
@@ -73,6 +75,8 @@ module signal_generator(i_clk,
 	initial ver_state = PIXEL_DATA;
 
 	reg [9:0] hor_counter;
+	reg [4:0] pixel_counter;
+	reg [4:0] line_counter;
 	initial hor_counter = hor_pixel_clocks;
 	reg [9:0] ver_counter;
 	initial ver_counter = ver_pixels;
@@ -84,22 +88,48 @@ module signal_generator(i_clk,
 			PIXEL_DATA: hor_counter <= hsync_front_porch_clocks;
 			HSYNC_FRONT_PORCH: hor_counter <= hsync_active_clocks;
 			HSYNC_ACTIVE: begin 
+				if (ver_state == PIXEL_DATA) o_pixel_y_clock <= 1'b1;
 				hor_counter <= hsync_back_porch_clocks;
 				ver_counter <= ver_counter - 1;
+
+				if (line_counter == 0) begin
+					line_counter <= 10;
+				end line_counter <= line_counter - 1;
 			end
-			VSYNC_BACK_PORCH: hor_counter <= hor_pixel_clocks;
+			HSYNC_BACK_PORCH: begin
+				hor_counter <= hor_pixel_clocks;
+				pixel_counter <= 10;
+				o_pixel_x_clock <= 1'b1;
+			end
 			endcase
-		end else hor_counter <= hor_counter - 1;
+		end else begin
+			hor_counter <= hor_counter - 1;
+			o_pixel_y_clock <= 1'b0;
+			
+			if (pixel_counter == 1) begin
+				if (hor_state == PIXEL_DATA && ver_state == PIXEL_DATA) o_pixel_x_clock <= 1'b1;
+				pixel_counter <= 10;
+			end else begin
+			 	pixel_counter <= pixel_counter - 1;
+				o_pixel_x_clock <= 1'b0;
+			end
+		end
 
 		if (ver_counter == 1) begin
 			ver_state <= ver_state + 1;
+			
 			case(ver_state)
 			PIXEL_DATA: ver_counter <= vsync_front_porch_lines;
 			VSYNC_FRONT_PORCH: ver_counter <= vsync_active_lines;
 			VSYNC_ACTIVE: ver_counter <= vsync_back_porch_lines;
-			VSYNC_BACK_PORCH: ver_counter <= ver_pixels;
+			VSYNC_BACK_PORCH: begin
+				ver_counter <= ver_pixels;
+				line_counter <= 10;
+				o_screen_reset <= 1'b1;
+			end
 			endcase
-		end
+		end else o_screen_reset <= 1'b0;
+
 	end
 
 endmodule
