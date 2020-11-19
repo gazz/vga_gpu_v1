@@ -58,14 +58,32 @@ module pixel_generator(i_clk,
 	assign instruction_args[23:0] = l_instruction[31:8];
 
 	/* verilator lint_off UNUSED */
-	wire [10:0] arg_pixel_index;
-	assign arg_pixel_index[10:0] = instruction_args[10:0];
+	reg pixel_write_pending;
+	initial pixel_write_pending = 0;
+	reg [9:0] arg_pixel_index;
+	initial arg_pixel_index = 0;
+	reg [2:0] pending_pixel;
+	initial pending_pixel = 0;
 	/* verilator lint_on UNUSED */
 
-	wire [6:0] palette_index;
-	assign palette_index[6:0] = {screen_buffer[row_offset + pixel_index +: 3], 4'b0};
+	
+	reg screen_v_reset;
+	initial screen_v_reset = 0;
+
+	reg [2:0] palette_index;
+	initial palette_index = 0;
+
+	reg [9:0] row_offset;
+	initial row_offset = 0;
+
+	reg [9:0] pixel_index;
+	initial pixel_index = 0;
+
+	reg [4:0] pixel_counter;
+	initial pixel_counter = 0;
 
 	always @(posedge i_clk) begin
+		pixel_write_pending <= 0;
 		if (l_instruction_ready) begin
 			case (instruction)
 			SET_BG_COLOR: begin
@@ -77,7 +95,11 @@ module pixel_generator(i_clk,
 			SET_BLACK_BG_COLOR: pending_bg_color <= 12'h000;
 			SET_WHITE_BG_COLOR: pending_bg_color <= 12'hfff;
 			SET_PIXEL: begin
-				// screen_buffer[arg_pixel_index +: 3] <= instruction_args[12:10];
+				// screen_buffer[arg_pixel_index] <= instruction_args[12:10];
+				// screen_buffer[arg_pixel_index] <= 3'h2;
+				arg_pixel_index <= instruction_args[9:0];
+				pending_pixel <= instruction_args[12:10];
+				pixel_write_pending <= 1;
 			end 
 			default:;
 			endcase
@@ -91,7 +113,7 @@ module pixel_generator(i_clk,
 		if (i_hsync) begin
 			pixel_index <= 0;
 		end else if (i_pixel_x_clock) begin
-			pixel_index <= pixel_index + 3;
+			pixel_index <= pixel_index + 1;
 		end
 
 		if (i_screen_reset) begin
@@ -105,7 +127,7 @@ module pixel_generator(i_clk,
 			pixel_row_counter <= pixel_row_counter - 1;
 			if (pixel_row_counter == 1) begin
 				pixel_row <= pixel_row + 1;
-				row_offset <= row_offset + 90;
+				row_offset <= row_offset + 30;
 				pixel_index <= 0;
 				pixel_row_counter <= 24;
 			end
@@ -116,32 +138,72 @@ module pixel_generator(i_clk,
 			screen_v_reset <= 1'b0;
 		end
 
-		o_color <= palette[palette_index +: 12];
-
 	end
 
-	reg screen_v_reset;
-	initial screen_v_reset = 0;
+
+	// reg [4:0] pixel_counter;
+	// if (pixel_counter == 1) begin
+	// 	if (hor_state == PIXEL_DATA && ver_state == PIXEL_DATA) o_pixel_x_clock <= 1'b1;
+	// 	pixel_counter <= 10;
+	// end else begin
+	//  	pixel_counter <= pixel_counter - 1;
+	// 	o_pixel_x_clock <= 1'b0;
+	// end
+
 
 
 	// lets try to use simple registers as screen buffer
-	reg [1799:0] screen_buffer;
-	// initial screen_buffer[1799:0] = {{75{3'h0}}, {75{3'h1}}};
-	initial screen_buffer[1799:0] = {
-									// {75{3'h0}}
-									{1{3'h7, 3'h5, 3'h4, 3'h5, 3'h4, 3'h5, 3'h4, 3'h0}},
-									{73{3'h7, 3'h6, 3'h5, 3'h4, 3'h3, 3'h2, 3'h1, 3'h0}},
-									{1{3'h7, 3'h5, 3'h4, 3'h5, 3'h4, 3'h5, 3'h4, 3'h0}}};
-	// reg [95:0] palette;
-	// initial palette[95:0] = {12'hff0,12'h0ff,12'hf0f,12'h00f,12'h0f0,12'hf00,12'hfff,12'h000};
-	reg [127:0] palette;
-	initial palette[127:0] = {16'hff0,16'h0ff,16'hf0f,16'h00f,16'h0f0,16'hf00,16'hfff,16'h000};
+	// reg [1799:0] screen_buffer;
+	reg	[2:0]	screen_buffer	[0:599];
 
-	reg [10:0] row_offset;
-	initial row_offset = 0;
+	// For loops require integer indices
+	integer		k;
 
-	reg [10:0] pixel_index;
-	initial pixel_index = 0;
+	initial begin
+		for(k=0; k<599; k=k+8) begin
+			screen_buffer[k + 0] = 3'h0;
+			screen_buffer[k + 1] = 3'h1;
+			screen_buffer[k + 2] = 3'h2;
+			screen_buffer[k + 3] = 3'h3;
+			screen_buffer[k + 4] = 3'h4;
+			screen_buffer[k + 5] = 3'h5;
+			screen_buffer[k + 6] = 3'h6;
+			screen_buffer[k + 7] = 3'h7;
+		end
+
+		// $readmemh("speech.hex", tx_memory);
+	end
+
+	wire [9:0] total_pixel_index;
+	assign total_pixel_index = row_offset + pixel_index;
+
+	always @(posedge i_clk)
+		// palette_index[6:0] <= {screen_buffer[row_offset + pixel_index], 4'b0};
+		palette_index[2:0] <= screen_buffer[total_pixel_index];
+
+	always @(posedge i_clk)
+		o_color <= palette[palette_index];
+
+	// always @(posedge i_clk)
+	// 	if (pixel_write_pending) screen_buffer[arg_pixel_index] <= pending_pixel;
+
+	// assign palette_index[6:0] = {screen_buffer[row_offset + pixel_index +: 3], 4'b0};
+
+	reg [11:0] palette [0:7];
+	initial begin
+		palette[0] = 12'h000;
+		palette[1] = 12'hfff;
+		palette[2] = 12'hf00;
+		palette[3] = 12'h0f0;
+		palette[4] = 12'h00f;
+		palette[5] = 12'hf0f;
+		palette[6] = 12'h0ff;
+		palette[7] = 12'hff0;
+	end
+
+
+
+	// reg [119:0] sprites [8];
 
 
 endmodule

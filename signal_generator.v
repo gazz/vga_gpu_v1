@@ -75,13 +75,13 @@ module signal_generator(i_clk,
 	initial ver_state = PIXEL_DATA;
 
 	reg [9:0] hor_counter;
-	reg [4:0] pixel_counter;
 	reg [4:0] line_counter;
 	initial hor_counter = hor_pixel_clocks;
 	reg [9:0] ver_counter;
 	initial ver_counter = ver_pixels;
 
 	always @(posedge i_clk) begin
+		o_pixel_x_clock <= 1'b0;
 		if (hor_counter == 1) begin
 			hor_state <= hor_state + 1;
 			case(hor_state)
@@ -100,21 +100,15 @@ module signal_generator(i_clk,
 			end
 			HSYNC_BACK_PORCH: begin
 				hor_counter <= hor_pixel_clocks;
-				pixel_counter <= 7;
-				// o_pixel_x_clock <= 1'b1;
+				o_pixel_x_clock <= 1'b1;
 			end
 			endcase
 		end else begin
 			hor_counter <= hor_counter - 1;
 			o_pixel_y_clock <= 1'b0;
 			
-			if (pixel_counter == 1) begin
-				if (hor_state == PIXEL_DATA && ver_state == PIXEL_DATA) o_pixel_x_clock <= 1'b1;
-				pixel_counter <= 10;
-			end else begin
-			 	pixel_counter <= pixel_counter - 1;
-				o_pixel_x_clock <= 1'b0;
-			end
+			if ((hor_state == HSYNC_BACK_PORCH && hor_counter < 4) ||
+				(hor_state == PIXEL_DATA && ver_state == PIXEL_DATA)) o_pixel_x_clock <= 1'b1;
 		end
 
 		if (ver_counter == 1) begin
