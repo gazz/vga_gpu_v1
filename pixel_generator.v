@@ -66,7 +66,7 @@ module pixel_generator(i_clk,
 	initial pending_pixel = 0;
 	/* verilator lint_on UNUSED */
 
-	
+
 	reg screen_v_reset;
 	initial screen_v_reset = 0;
 
@@ -76,11 +76,17 @@ module pixel_generator(i_clk,
 	reg [9:0] row_offset;
 	initial row_offset = 0;
 
-	reg [9:0] pixel_index;
-	initial pixel_index = 0;
+	reg [6:0] cell_row_offset;
+	initial cell_row_offset = 0;
 
-	reg [4:0] pixel_counter;
+	reg [9:0] cell_index;
+	initial cell_index = 0;
+
+	reg [6:0] pixel_counter;
 	initial pixel_counter = 0;
+
+	reg line_pad;
+	initial line_pad = 0;
 
 	always @(posedge i_clk) begin
 		pixel_write_pending <= 0;
@@ -111,25 +117,42 @@ module pixel_generator(i_clk,
 		end
 
 		if (i_hsync) begin
-			pixel_index <= 0;
+			cell_index <= 0;
+			pixel_counter <= 0;
 		end else if (i_pixel_x_clock) begin
-			pixel_index <= pixel_index + 1;
+			
+			if (pixel_counter > 8) pixel_counter <= 0;
+			else begin
+				if (pixel_counter > 7) cell_index <= cell_index + 1;
+				pixel_counter <= pixel_counter + 1;
+			end
 		end
 
 		if (i_screen_reset) begin
-			pixel_index <= 0;
+			cell_index <= 0;
+			pixel_counter <= 0;
 			pixel_row <= 0;
 			pixel_row_counter <= 24;
 			row_offset <= 0;
+			cell_row_offset <= 0;
+			line_pad <= 0;
 		end
 
 		if (i_pixel_y_clock) begin
 			pixel_row_counter <= pixel_row_counter - 1;
+			
+			// do 2 lines per pixel
+			if (line_pad) cell_row_offset <= cell_row_offset + 10;
+			line_pad <= ~line_pad;
+
 			if (pixel_row_counter == 1) begin
+				cell_index <= 0;
+				pixel_counter <= 0;
 				pixel_row <= pixel_row + 1;
-				row_offset <= row_offset + 30;
-				pixel_index <= 0;
 				pixel_row_counter <= 24;
+				row_offset <= row_offset + 30;
+				cell_row_offset <= 0;
+				line_pad <= 0;
 			end
 			screen_v_reset <= 1'b1;
 		end
@@ -174,12 +197,48 @@ module pixel_generator(i_clk,
 		// $readmemh("speech.hex", tx_memory);
 	end
 
-	wire [9:0] total_pixel_index;
-	assign total_pixel_index = row_offset + pixel_index;
+	reg [2:0] sprite_index;
+	initial sprite_index = 0;
 
 	always @(posedge i_clk)
 		// palette_index[6:0] <= {screen_buffer[row_offset + pixel_index], 4'b0};
-		palette_index[2:0] <= screen_buffer[total_pixel_index];
+		sprite_index[2:0] <= screen_buffer[row_offset + cell_index];
+		// palette_index[2:0] <= screen_buffer[row_offset + cell_index];
+
+
+	reg [119:0] sprites [8];
+	initial begin
+		for(k=0; k<8; k=k+1) begin
+			sprites[k] = {
+				{10'b1111111111},
+				{10'b0000000000},
+				{10'b0111111110},
+				{10'b0000110000},
+				{10'b0000110000},
+				{10'b0110110000},
+				{10'b0000110110},
+				{10'b0000110000},
+				{10'b0000110000},
+				{10'b0011111100},
+				{10'b0000000000},
+				{10'b0000000000}
+			};
+		end
+	end
+
+	reg [119:0] current_sprite;
+	initial current_sprite = 0;
+
+	always @(posedge i_clk)
+		// we hav pixel index too
+		current_sprite <= sprites[0];
+		// palette_index[2:0] <= sprite_index;
+
+	always @(posedge i_clk)
+		// we hav pixel index too
+		// palette_index[2:0] <= current_sprite[119 - (cell_row_offset + pixel_counter)] 
+		// 	? (sprite_index == 0 ? 1 : sprite_index) : 3'h0;
+		palette_index[2:0] <= current_sprite[119 - (cell_row_offset + pixel_counter)] ? (sprite_index == 0 ? 4 : sprite_index) : 3'h0;
 
 	always @(posedge i_clk)
 		o_color <= palette[palette_index];
@@ -200,8 +259,6 @@ module pixel_generator(i_clk,
 		palette[6] = 12'h0ff;
 		palette[7] = 12'hff0;
 	end
-
-
 
 	// reg [119:0] sprites [8];
 
