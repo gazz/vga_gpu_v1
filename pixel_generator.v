@@ -236,17 +236,17 @@ module pixel_generator(i_clk,
 	initial begin
 		for(k=0; k<64; k=k+1) begin
 			ext_sprites[k] = {
-				{40'h1111111111},
+				{40'h0000000000},
 				{40'h0000000000},
 				{40'h0111881110},
 				{40'h0000990000},
 				{40'h0000aa0000},
-				{40'h0110bb0000},
-				{40'h0000cc0110},
+				{40'h0770bb0000},
+				{40'h0000cc0770},
 				{40'h0000dd0000},
 				{40'h0000ee0000},
 				{40'h0011ff1100},
-				{40'h0000000000},
+				{40'h0333333330},
 				{40'h0000000000}
 			};
 		end
@@ -276,35 +276,35 @@ module pixel_generator(i_clk,
 	always @(posedge i_clk)
 		o_color <= palette[palette_index];
 
-	always @(posedge i_clk)
-		if (pixel_write_pending) screen_buffer[arg_pixel_index] <= pending_pixel;
+	// always @(posedge i_clk)
+	// 	if (pixel_write_pending) screen_buffer[arg_pixel_index] <= pending_pixel;
 
-	reg [479:0] sprite_being_updated;
-	always @(posedge i_clk) begin
-		// sprite_update_pending <= 1'b1;
-		if (sprite_update_pending) sprite_update_state <= SPRITE_LOAD_FOR_UPDATE;
+	// reg [479:0] sprite_being_updated;
+	// always @(posedge i_clk) begin
+	// 	// sprite_update_pending <= 1'b1;
+	// 	if (sprite_update_pending) sprite_update_state <= SPRITE_LOAD_FOR_UPDATE;
 
-		case (sprite_update_state)
-			SPRITE_UPDATE_IDLE:;
-			SPRITE_LOAD_FOR_UPDATE: begin
-				// sprite_write_index <= instruction_args[8:0];
-				sprite_being_updated <= ext_sprites[sprite_write_index];
-				sprite_update_state <= SPRITE_UPDATE;
-			end
-			SPRITE_UPDATE: begin
-				// update sprite inline here...
-				// sprite_write_offset <= instruction_args[15:9];
-				// sprite_write_data <= instruction_args[23:16];
-				sprite_being_updated[sprite_write_offset[8:0] +: 4] <= sprite_write_data;
+	// 	case (sprite_update_state)
+	// 		SPRITE_UPDATE_IDLE:;
+	// 		SPRITE_LOAD_FOR_UPDATE: begin
+	// 			// sprite_write_index <= instruction_args[8:0];
+	// 			sprite_being_updated <= ext_sprites[sprite_write_index];
+	// 			sprite_update_state <= SPRITE_UPDATE;
+	// 		end
+	// 		SPRITE_UPDATE: begin
+	// 			// update sprite inline here...
+	// 			// sprite_write_offset <= instruction_args[15:9];
+	// 			// sprite_write_data <= instruction_args[23:16];
+	// 			sprite_being_updated[sprite_write_offset[8:0] +: 4] <= sprite_write_data;
 
-				sprite_update_state <= SPRITE_SAVE;
-			end
-			SPRITE_SAVE: begin
-				ext_sprites[sprite_write_index] <= sprite_being_updated;
-				sprite_update_state <= SPRITE_UPDATE_IDLE;
-			end
-		endcase
-	end
+	// 			sprite_update_state <= SPRITE_SAVE;
+	// 		end
+	// 		SPRITE_SAVE: begin
+	// 			ext_sprites[sprite_write_index] <= sprite_being_updated;
+	// 			sprite_update_state <= SPRITE_UPDATE_IDLE;
+	// 		end
+	// 	endcase
+	// end
 
 
 	// assign palette_index[6:0] = {screen_buffer[row_offset + pixel_index +: 3], 4'b0};
