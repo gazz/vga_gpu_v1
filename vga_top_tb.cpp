@@ -36,6 +36,23 @@ void set_data_byte(Vvga_top *tb, short b) {
 void set_bg(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int bg);
 void set_pixel(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int pixel, int palette_index);
 
+void set_sprite(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, unsigned char sprite_index, unsigned char sprite[60]);
+
+unsigned char mySprite[120] = {
+  0xa,1,1,0xb,0xc,1,1,0xd,1,1,
+  1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1
+};
+
 int main(int argc, char **argv) {
 	unsigned tickcount = 0;
 
@@ -51,7 +68,9 @@ int main(int argc, char **argv) {
 	tb->trace(tfp, 99);
 	tfp->open("vga_top.vcd");
 
-	set_pixel(tickcount, tb, tfp, 3, 1);
+	// set_pixel(tickcount, tb, tfp, 3, 1);
+
+	set_sprite(tickcount, tb, tfp, 0, mySprite);
 
 	// tb->CNTR_WE = 1;
 	// tb->CNTR_EN = 1;
@@ -152,6 +171,100 @@ void set_pixel(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int pixel,
 	while (!tb->CNTR_BUSY) tick(++tickcount, tb, tfp);
 
 }
+
+
+void set_sprite_pixels(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, unsigned char sprite_index, unsigned char offset, unsigned char pixel_data) {
+
+	unsigned char arg0 = pixel_data >> 4;
+	unsigned char offsetX = offset % 10;
+	unsigned char offsetY = offset / 10;
+	unsigned char arg1 = ((pixel_data << 4) & 0xff) + (offsetY & 0xf);
+	unsigned char arg2 = ((offsetX << 4) & 0xff) + (sprite_index & 0xf);
+
+
+	printf("sprite_index: %d, offset: %d, \targ0: %x, arg1: %x, arg2: %x:: pixel_data: %x\n", 
+		sprite_index, offset, arg0, arg1, arg2, pixel_data);
+
+
+		// instruction
+	set_data_byte(tb, 8);
+	tick(++tickcount, tb, tfp);
+
+	tb->CNTR_WE = 0;
+	tick(++tickcount, tb, tfp);
+
+	tb->CNTR_EN = 0;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+
+	tb->CNTR_EN = 1;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+
+	// 1st byte
+	set_data_byte(tb, arg0);
+	tick(++tickcount, tb, tfp);
+
+	tb->CNTR_EN = 0;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+
+	tb->CNTR_EN = 1;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+
+	// 2nd byte
+	set_data_byte(tb, arg1);
+	tick(++tickcount, tb, tfp);
+
+	tb->CNTR_EN = 0;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+
+	tb->CNTR_EN = 1;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+
+	// 3rd byte
+	set_data_byte(tb, arg2);
+	tick(++tickcount, tb, tfp);
+
+	tb->CNTR_EN = 0;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+
+	tb->CNTR_EN = 1;
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+	tick(++tickcount, tb, tfp);
+
+
+	tb->CNTR_WE = 1;
+	tick(++tickcount, tb, tfp);
+
+	while (tb->CNTR_BUSY) tick(++tickcount, tb, tfp);
+
+	while (!tb->CNTR_BUSY) tick(++tickcount, tb, tfp);
+}
+
+void set_sprite(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, unsigned char sprite_index, unsigned char sprite[120]) {
+	for (int i = 0; i < 120; i+=2) {
+		unsigned char sprite_pixel = sprite[i];
+		unsigned char sprite_pixel2 = sprite[i+1];
+		unsigned char combined_pixels = ((sprite_pixel << 4) & 0xff) + (sprite_pixel2 & 0xf);
+		printf("Pixel tuple: 0: %x, 1: %x, combined: %x\t", sprite_pixel, sprite_pixel2, combined_pixels); 
+
+		set_sprite_pixels(tickcount, tb, tfp, sprite_index, i, combined_pixels);
+	}
+}
+
 
 
 void set_bg(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int bg) {

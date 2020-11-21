@@ -35,13 +35,15 @@ module vga_gpu(i_clk,
 	pixel_generator pixels(.i_clk(i_clk),
 		.i_vsync(!o_vsync), .i_hsync(!o_hsync),
 		.i_screen_reset(screen_reset), .i_pixel_x_clock(pixel_x_clock), .i_pixel_y_clock(pixel_y_clock), .o_color(color),
-		.i_instruction(instruction), .i_instruction_ready(instruction_ready));
+		.i_instruction(instruction), 
+		.i_instruction_ready(instruction_ready));
 
 	signal_generator signal(.i_clk(i_clk),
 		.o_screen_reset(screen_reset), .o_pixel_x_clock(pixel_x_clock), .o_pixel_y_clock(pixel_y_clock), .i_color(color),
 		.o_hsync(o_hsync), .o_vsync(o_vsync),
 		.o_red(o_red), .o_green(o_green), .o_blue(o_blue),
-		.i_instruction(instruction), .i_instruction_ready(instruction_ready));
+		.i_instruction(instruction), 
+		.i_instruction_ready(instruction_ready));
 
 endmodule
 
