@@ -57,7 +57,7 @@ module pixel_generator(i_clk,
 	initial pixel_write_pending = 0;
 	reg [9:0] arg_pixel_index;
 	initial arg_pixel_index = 0;
-	reg [7:0] pending_pixel;
+	reg [6:0] pending_pixel;
 	initial pending_pixel = 0;
 	/* verilator lint_on UNUSED */
 
@@ -89,7 +89,7 @@ module pixel_generator(i_clk,
 	// sprite write
 	/* verilator lint_off UNUSED */
 	reg sprite_update_pending;
-	reg [6:0] sprite_write_line_index;
+	reg [9:0] sprite_write_line_index;
 	reg [5:0] sprite_write_offset;
 	reg [7:0] sprite_write_data;
 	/* verilator lint_on UNUSED */
@@ -99,9 +99,9 @@ module pixel_generator(i_clk,
 		sprite_update_pending <= 0;
 		if (l_instruction_ready) begin
 			case (l_instruction[3:0])
-			// SET_BG_COLOR: begin
-			// 	//pending_bg_color <= l_instruction[19:8];
-			// end
+			SET_BG_COLOR: begin
+				pending_bg_color <= l_instruction[19:8];
+			end
 			SET_RED_BG_COLOR: pending_bg_color <= 12'hf00;
 			SET_GREEN_BG_COLOR: pending_bg_color <= 12'h0f0;
 			SET_BLUE_BG_COLOR: pending_bg_color <= 12'h00f;
@@ -109,11 +109,13 @@ module pixel_generator(i_clk,
 			SET_WHITE_BG_COLOR: pending_bg_color <= 12'hfff;
 			SET_PIXEL: begin
 				pixel_write_pending <= 1;
+				arg_pixel_index <= l_instruction[17:8];
+				pending_pixel <= l_instruction[24:18];
 			end 
 			SET_SPRITE: begin
 				sprite_update_pending <= 1;
-				sprite_write_line_index <= {l_instruction[11:8], 3'h0} + {1'h0, l_instruction[11:8], 2'h0}
-					+ {3'h0, l_instruction[19:16]};
+				sprite_write_line_index <= {3'h0, l_instruction[11:8], 3'h0} + {4'h0, l_instruction[11:8], 2'h0}
+					+ {6'h0, l_instruction[19:16]};
 				sprite_write_offset <= (39 - ({2'h0, l_instruction[15:12]} << 2));
 				sprite_write_data <= l_instruction[27:20];
 			end
@@ -184,21 +186,24 @@ module pixel_generator(i_clk,
 
 	end
 
-	// lets try to use simple registers as screen buffer
+
+	// this greatly affects how much memory we have
 	localparam screen_buffer_size = 600;
-	reg	[7:0]	screen_buffer	[screen_buffer_size];
+	localparam sprite_count = 85;
+
+	reg	[6:0]	screen_buffer	[screen_buffer_size];
 	// For loops require integer indices
 	integer		k;
 	integer		j;
 	initial begin
-		for(k=0; k<screen_buffer_size-1; k=k+8) begin
-			for (j=0; j<8; j=j+1)
-				screen_buffer[k+j] = j;
+		for(k=0; k<screen_buffer_size-1; k=k+sprite_count) begin
+			for (j=0; j<sprite_count && k+j < screen_buffer_size; j=j+1)
+				screen_buffer[k+j] = j[6:0];
 		end
 	end
 
 	/* verilator lint_off UNUSED */
-	reg [7:0] sprite_index;
+	reg [6:0] sprite_index;
 	initial sprite_index = 0;
 	/* verilator lint_on UNUSED */
 
@@ -209,9 +214,9 @@ module pixel_generator(i_clk,
 	always @(posedge i_clk)
 		sprite_index <= screen_buffer[read_access_index];
 
-	reg [39:0] ext_sprites_12lines[8 * 12]; // 192 lines
+	reg [39:0] ext_sprites_12lines[sprite_count * 12]; // 192 lines
 	initial begin
-		for(k=0; k<96; k=k+48) begin
+		for(k=0; k<sprite_count * 12; k=k+96) begin
 
 			ext_sprites_12lines[k] = 	 {40'h0033003300};
 			ext_sprites_12lines[k + 1] = {40'h0000000000};
@@ -227,16 +232,16 @@ module pixel_generator(i_clk,
 			ext_sprites_12lines[k + 11] = {40'h0000000000};
 
 			ext_sprites_12lines[k + 24] = {40'h0000000000};
-			ext_sprites_12lines[k + 25] = {40'h0007777000};
-			ext_sprites_12lines[k + 26] = {40'h0070000700};
-			ext_sprites_12lines[k + 27] = {40'h0700000070};
-			ext_sprites_12lines[k + 28] = {40'h0702002070};
-			ext_sprites_12lines[k + 29] = {40'h0700000070};
-			ext_sprites_12lines[k + 30] = {40'h0700000070};
-			ext_sprites_12lines[k + 31] = {40'h0702002070};
-			ext_sprites_12lines[k + 32] = {40'h0700220070};
-			ext_sprites_12lines[k + 33] = {40'h0070000700};
-			ext_sprites_12lines[k + 34] = {40'h0007777000};
+			ext_sprites_12lines[k + 25] = {40'h0077777700};
+			ext_sprites_12lines[k + 26] = {40'h0700000070};
+			ext_sprites_12lines[k + 27] = {40'h7000000007};
+			ext_sprites_12lines[k + 28] = {40'h7007007007};
+			ext_sprites_12lines[k + 29] = {40'h7000000007};
+			ext_sprites_12lines[k + 30] = {40'h7000000007};
+			ext_sprites_12lines[k + 31] = {40'h7070000707};
+			ext_sprites_12lines[k + 32] = {40'h7007777007};
+			ext_sprites_12lines[k + 33] = {40'h0700000070};
+			ext_sprites_12lines[k + 34] = {40'h0077777700};
 			ext_sprites_12lines[k + 35] = {40'h0000000000};
 		end
 	end
@@ -244,10 +249,10 @@ module pixel_generator(i_clk,
 	reg [39:0] current_ext_sprite_line;
 	initial current_ext_sprite_line = 0;
 
-	reg [6:0] sprite_line_index;
+	reg [9:0] sprite_line_index;
 	always @(posedge i_clk)
-		sprite_line_index <= ({3'h0, sprite_index[3:0]} << 2)
-			 + ({3'h0, sprite_index[3:0]} << 3) + {3'h0, cell_row};
+		sprite_line_index <= ({3'h0, sprite_index[6:0]} << 2)
+			 + ({3'h0, sprite_index[6:0]} << 3) + {5'h0, cell_row};
 
 	always @(posedge i_clk)
 		current_ext_sprite_line <= ext_sprites_12lines[sprite_line_index];
@@ -259,7 +264,7 @@ module pixel_generator(i_clk,
 		o_color <= palette[palette_index];
 
 	always @(posedge i_clk)
-		if (pixel_write_pending) screen_buffer[l_instruction[17:8]] <= {l_instruction[7:0]};
+		if (pixel_write_pending) screen_buffer[arg_pixel_index] <= pending_pixel;
 
 
 	reg [2:0] sprite_update_state;
@@ -297,10 +302,6 @@ module pixel_generator(i_clk,
 				flushable_sprite[sprite_write_offset -: 8] <= sprite_write_data;
 			end
 			SPRITE_SAVE: begin
-				// flushable_sprite[sprite_write_offset -: 8] <= l_instruction[27:20];
-				// ext_sprites_12lines[sprite_write_line_index] <= sprite_line_being_updated;
-				// ext_sprites_12lines[sprite_write_line_index] <= 40'h0;//sprite_line_being_updated;
-				// ext_sprites_12lines[sprite_write_index[6:0]] <= 40'h0;
 				sprite_update_state <= SPRITE_PAD;
 			end
 			SPRITE_PAD: begin
@@ -327,16 +328,6 @@ module pixel_generator(i_clk,
 			ext_sprites_12lines[sprite_write_line_index] <= flushable_sprite;
 			some_flag <= 1;
 		end else some_flag <= 0;
-
-	// always @(posedge i_clk)
-	// 	if (sprite_update_state == SPRITE_UPDATE) begin
-	// 		// flushable_sprite <= {sprite_line_being_updated[39:sprite_write_offset],
-	// 		// 	l_instruction[27:20],
-	// 		// 	sprite_line_being_updated[sprite_write_offset-8:0]
-	// 		// };
-	// 		flushable_sprite <= sprite_line_being_updated;
-	// 	end
-			
 
 	reg [11:0] palette [16];
 	initial begin

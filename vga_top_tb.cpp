@@ -34,7 +34,7 @@ void set_data_byte(Vvga_top *tb, short b) {
 }
 
 void set_bg(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int bg);
-void set_pixel(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int pixel, int palette_index);
+void set_cell(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int pixel, int sprite_index);
 
 void set_sprite(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, unsigned char sprite_index, unsigned char sprite[60]);
 
@@ -70,7 +70,9 @@ int main(int argc, char **argv) {
 
 	// set_pixel(tickcount, tb, tfp, 3, 1);
 
-	set_sprite(tickcount, tb, tfp, 0, mySprite);
+	// set_sprite(tickcount, tb, tfp, 0, mySprite);
+
+	set_sprite(tickcount, tb, tfp, 5, mySprite);
 
 	// tb->CNTR_WE = 1;
 	// tb->CNTR_EN = 1;
@@ -119,7 +121,7 @@ int main(int argc, char **argv) {
 
 }
 
-void set_pixel(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int pixel, int palette_index) {
+void set_cell(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int cell_index, int sprite_index) {
 	// instruction
 	set_data_byte(tb, 7);
 	tick(++tickcount, tb, tfp);
@@ -137,7 +139,7 @@ void set_pixel(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int pixel,
 	tick(++tickcount, tb, tfp);
 	tick(++tickcount, tb, tfp);
 
-	set_data_byte(tb, (palette_index << 2 | pixel >> 8));
+	set_data_byte(tb, (sprite_index << 2 | cell_index >> 8));
 	tick(++tickcount, tb, tfp);
 
 	tb->CNTR_EN = 0;
@@ -150,7 +152,7 @@ void set_pixel(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int pixel,
 	tick(++tickcount, tb, tfp);
 	tick(++tickcount, tb, tfp);
 
-	set_data_byte(tb, pixel & 0xff);
+	set_data_byte(tb, cell_index & 0xff);
 	tick(++tickcount, tb, tfp);
 
 	tb->CNTR_EN = 0;
