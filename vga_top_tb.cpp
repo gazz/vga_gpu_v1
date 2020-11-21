@@ -72,6 +72,7 @@ int main(int argc, char **argv) {
 
 	// set_sprite(tickcount, tb, tfp, 0, mySprite);
 
+	// set_sprite(tickcount, tb, tfp, 16, mySprite);
 	set_sprite(tickcount, tb, tfp, 5, mySprite);
 
 	// tb->CNTR_WE = 1;
@@ -177,11 +178,11 @@ void set_cell(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, int cell_in
 
 void set_sprite_pixels(unsigned &tickcount, Vvga_top *tb, VerilatedVcdC* tfp, unsigned char sprite_index, unsigned char offset, unsigned char pixel_data) {
 
-	unsigned char arg0 = pixel_data >> 4;
+	unsigned char arg0 = pixel_data;
 	unsigned char offsetX = offset % 10;
 	unsigned char offsetY = offset / 10;
-	unsigned char arg1 = ((pixel_data << 4) & 0xff) + (offsetY & 0xf);
-	unsigned char arg2 = ((offsetX << 4) & 0xff) + (sprite_index & 0xf);
+	unsigned char arg1 = (offsetY << 4) + (offsetX & 0xf);
+	unsigned char arg2 = sprite_index & 0xff;
 
 
 	printf("sprite_index: %d, offset: %d, \targ0: %x, arg1: %x, arg2: %x:: pixel_data: %x\n", 

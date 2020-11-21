@@ -114,10 +114,31 @@ module pixel_generator(i_clk,
 			end 
 			SET_SPRITE: begin
 				sprite_update_pending <= 1;
-				sprite_write_line_index <= {3'h0, l_instruction[11:8], 3'h0} + {4'h0, l_instruction[11:8], 2'h0}
-					+ {6'h0, l_instruction[19:16]};
-				sprite_write_offset <= (39 - ({2'h0, l_instruction[15:12]} << 2));
-				sprite_write_data <= l_instruction[27:20];
+
+				// unsigned char arg0 = pixel_data;
+				// unsigned char arg1 = (offsetY << 4) + (offsetX & 0xf);
+				// unsigned char arg2 = sprite_index & 0xff;
+
+
+
+				// something not right
+				// sprite_write_line_index <= {l_instruction[15:8], 2'h0} + {l_instruction[14:8], 2'h0}
+				// 	+ {6'h0, l_instruction[19:16]};
+				// sprite_write_line_index <= 0;
+
+				// 16 sprite input should result in 16 * 12 = 192
+				// sprite_write_line_index <= ({4'h0, l_instruction[15:8]} << 3) + ({4'h0, l_instruction[15:8]} << 2);
+				// sprite_write_line_index <= ({3'h0, l_instruction[14:8]} << 3) + ({3'h0, l_instruction[14:8]} << 2)
+				// 	+ {6'h0, l_instruction[23:20]};
+				sprite_write_line_index <= ({3'h0, l_instruction[14:8]} << 3) + ({3'h0, l_instruction[14:8]} << 2) 
+					+ {6'h0, l_instruction[23:20]};
+
+				// sprite_write_line_index <= {l_instruction[15:8], 3'h0} + {l_instruction[14:8], 2'h0};
+					// + {6'h0, l_instruction[19:16]};
+
+
+				sprite_write_offset <= (39 - {l_instruction[19:16], 2'h0});
+				sprite_write_data <= l_instruction[31:24];
 			end
 			default:;
 			endcase
