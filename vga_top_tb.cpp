@@ -72,8 +72,12 @@ int main(int argc, char **argv) {
 
 	// set_sprite(tickcount, tb, tfp, 0, mySprite);
 
+	set_cell(tickcount, tb, tfp, 0, 32);
+	// set_cell(tickcount, tb, tfp, 0, 4);
+	// set_cell(tickcount, tb, tfp, 0, 5);
+
 	// set_sprite(tickcount, tb, tfp, 16, mySprite);
-	set_sprite(tickcount, tb, tfp, 5, mySprite);
+	// set_sprite(tickcount, tb, tfp, 5, mySprite);
 
 	// tb->CNTR_WE = 1;
 	// tb->CNTR_EN = 1;

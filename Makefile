@@ -53,7 +53,7 @@ VDEPS  := vga_gpu.v instruction_decoder.v instruction_buffer.v signal_generator.
 # VDEPS  := signal_generator.v
 # VDEPS  := 
 .PHONY: bin
-bin: $(TOP_MODULE).rpt $(TOP_MODULE).bin
+bin: font.mem $(TOP_MODULE).rpt $(TOP_MODULE).bin
 
 $(TOP_MODULE).json: $(TOP_MODULE).v $(VDEPS)
 	yosys -ql $(TOP_MODULE).yslog -p 'synth_ice40 -top vga_top -json $@' $^
@@ -70,3 +70,6 @@ $(TOP_MODULE).rpt: $(TOP_MODULE).asc
 .PHONY: prog
 prog: bin
 	iceprog $(TOP_MODULE).bin
+
+font.mem:
+	python font_generator.py ~/Documents/sprites/font.spr hex-text > font.mem

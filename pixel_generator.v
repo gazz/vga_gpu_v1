@@ -115,28 +115,8 @@ module pixel_generator(i_clk,
 			SET_SPRITE: begin
 				sprite_update_pending <= 1;
 
-				// unsigned char arg0 = pixel_data;
-				// unsigned char arg1 = (offsetY << 4) + (offsetX & 0xf);
-				// unsigned char arg2 = sprite_index & 0xff;
-
-
-
-				// something not right
-				// sprite_write_line_index <= {l_instruction[15:8], 2'h0} + {l_instruction[14:8], 2'h0}
-				// 	+ {6'h0, l_instruction[19:16]};
-				// sprite_write_line_index <= 0;
-
-				// 16 sprite input should result in 16 * 12 = 192
-				// sprite_write_line_index <= ({4'h0, l_instruction[15:8]} << 3) + ({4'h0, l_instruction[15:8]} << 2);
-				// sprite_write_line_index <= ({3'h0, l_instruction[14:8]} << 3) + ({3'h0, l_instruction[14:8]} << 2)
-				// 	+ {6'h0, l_instruction[23:20]};
 				sprite_write_line_index <= ({3'h0, l_instruction[14:8]} << 3) + ({3'h0, l_instruction[14:8]} << 2) 
 					+ {6'h0, l_instruction[23:20]};
-
-				// sprite_write_line_index <= {l_instruction[15:8], 3'h0} + {l_instruction[14:8], 2'h0};
-					// + {6'h0, l_instruction[19:16]};
-
-
 				sprite_write_offset <= (39 - {l_instruction[19:16], 2'h0});
 				sprite_write_data <= l_instruction[31:24];
 			end
@@ -237,35 +217,37 @@ module pixel_generator(i_clk,
 
 	reg [39:0] ext_sprites_12lines[sprite_count * 12]; // 192 lines
 	initial begin
-		for(k=0; k<sprite_count * 12; k=k+96) begin
+		// for(k=0; k<sprite_count * 12; k=k+96) begin
 
-			ext_sprites_12lines[k] = 	 {40'h0033003300};
-			ext_sprites_12lines[k + 1] = {40'h0000000000};
-			ext_sprites_12lines[k + 2] = {40'h0111881110};
-			ext_sprites_12lines[k + 3] = {40'h0000990000};
-			ext_sprites_12lines[k + 4] = {40'h0000cd0000};
-			ext_sprites_12lines[k + 5] = {40'h0770bb0000};
-			ext_sprites_12lines[k + 6] = {40'h0000cc0770};
-			ext_sprites_12lines[k + 7] = {40'h0000dd0000};
-			ext_sprites_12lines[k + 8] = {40'h0000ee0000};
-			ext_sprites_12lines[k + 9] = {40'h0011ff1100};
-			ext_sprites_12lines[k + 10] = {40'h0333553330};
-			ext_sprites_12lines[k + 11] = {40'h0000000000};
+		// 	ext_sprites_12lines[k] = 	 {40'h0033003300};
+		// 	ext_sprites_12lines[k + 1] = {40'h0000000000};
+		// 	ext_sprites_12lines[k + 2] = {40'h0111881110};
+		// 	ext_sprites_12lines[k + 3] = {40'h0000990000};
+		// 	ext_sprites_12lines[k + 4] = {40'h0000cd0000};
+		// 	ext_sprites_12lines[k + 5] = {40'h0770bb0000};
+		// 	ext_sprites_12lines[k + 6] = {40'h0000cc0770};
+		// 	ext_sprites_12lines[k + 7] = {40'h0000dd0000};
+		// 	ext_sprites_12lines[k + 8] = {40'h0000ee0000};
+		// 	ext_sprites_12lines[k + 9] = {40'h0011ff1100};
+		// 	ext_sprites_12lines[k + 10] = {40'h0333553330};
+		// 	ext_sprites_12lines[k + 11] = {40'h0000000000};
 
-			ext_sprites_12lines[k + 24] = {40'h0000000000};
-			ext_sprites_12lines[k + 25] = {40'h0077777700};
-			ext_sprites_12lines[k + 26] = {40'h0700000070};
-			ext_sprites_12lines[k + 27] = {40'h7000000007};
-			ext_sprites_12lines[k + 28] = {40'h7007007007};
-			ext_sprites_12lines[k + 29] = {40'h7000000007};
-			ext_sprites_12lines[k + 30] = {40'h7000000007};
-			ext_sprites_12lines[k + 31] = {40'h7070000707};
-			ext_sprites_12lines[k + 32] = {40'h7007777007};
-			ext_sprites_12lines[k + 33] = {40'h0700000070};
-			ext_sprites_12lines[k + 34] = {40'h0077777700};
-			ext_sprites_12lines[k + 35] = {40'h0000000000};
-		end
+		// 	ext_sprites_12lines[k + 24] = {40'h0000000000};
+		// 	ext_sprites_12lines[k + 25] = {40'h0077777700};
+		// 	ext_sprites_12lines[k + 26] = {40'h0700000070};
+		// 	ext_sprites_12lines[k + 27] = {40'h7000000007};
+		// 	ext_sprites_12lines[k + 28] = {40'h7007007007};
+		// 	ext_sprites_12lines[k + 29] = {40'h7000000007};
+		// 	ext_sprites_12lines[k + 30] = {40'h7000000007};
+		// 	ext_sprites_12lines[k + 31] = {40'h7070000707};
+		// 	ext_sprites_12lines[k + 32] = {40'h7007777007};
+		// 	ext_sprites_12lines[k + 33] = {40'h0700000070};
+		// 	ext_sprites_12lines[k + 34] = {40'h0077777700};
+		// 	ext_sprites_12lines[k + 35] = {40'h0000000000};
+		// end
+		$readmemh("font.mem", ext_sprites_12lines);
 	end
+
 
 	reg [39:0] current_ext_sprite_line;
 	initial current_ext_sprite_line = 0;
@@ -334,7 +316,6 @@ module pixel_generator(i_clk,
 			default:;
 		endcase
 	end
-
 
 	always @(posedge i_clk)
 		if (sprite_update_state == SPRITE_LOAD_FOR_UPDATE
